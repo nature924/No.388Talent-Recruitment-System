@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head th:replace="front-common :: commonCss(~{::title},~{},~{},~{::style})">
+    <title>IT人才招聘-公司</title>
+    <style type="text/css">
+        * {
+            padding: 0px;
+            margin: 0px;
+        }
+        .filter {
+            padding: 40px;
+            background-color: #ffffff;
+        }
+        .filter-row{
+            margin: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .filter-row span{
+            font-size: 14px;
+        }
+        .filter-row span a{
+            font-size: 10px;
+            margin-left: 20px;
+        }
+        .company{
+            padding: 40px;
+        }
+        .company-info{
+            background-color: #ffffff;
+            border: solid 10px #f8f8f8;
+        }
+        .company-info img{
+            height:55px;
+            width: 55px;
+            border: solid 1px #b3b1b1;
+            float: left;
+        }
+        .conpany-text{
+            height: 25px;
+            line-height: 25px;
+            font-size: 16px;
+            font-weight: 400;
+            text-align: right;
+            text-overflow: ellipsis;
+        }
+        .conpany-text p{
+            color: #666666;
+            height: 40px;
+            line-height: 41px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+<div class="layui-layout layui-layout-admin">
+    <div th:replace="front-common::header('company')"></div>
+
+    <div class="layui-layout-body" style="margin-top: 50px;background-color: #f8f8f8;">
+        <!-- 内容主体区域 -->
+        <div class="filter">
+            <div class="layui-container">
+                <div class="layui-row filter-row">
+                    <span class="layui-col-md1">融资阶段:</span>
+                    <span class="layui-col-md11">
+                        <a th:href="@{/personal/company?listed=&size={size}(size=${size})}" th:style="${listed==null?'color:#01AAED;':''}">不限</a>
+                        <a th:href="@{/personal/company?listed={listed}&size={size}(listed=${listedStatus.value},size=${size})}"
+                           th:each="listedStatus,stat:${application.listedStatusList}" th:text="${listedStatus.value}"
+                           th:style="${listed==listedStatus.value?'color:#01AAED;':''}"></a>
+                    </span>
+                </div>
+                <div class="layui-row filter-row">
+                    <span class="layui-col-md1">公司规模:</span>
+                    <span class="layui-col-md11">
+                        <a th:href="@{/personal/company?listed={listed}&size=(listed=${listed})}" th:style="${size==null?'color:#01AAED;':''}">不限</a>
+                        <a th:href="@{/personal/company?listed={listed}&size={size}(size=${sz.value},listed=${listed})}"
+                           th:each="sz,stat:${application.sizeList}" th:text="${sz.value}"
+                           th:style="${size==sz.value?'color:#01AAED;':''}"></a>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="layui-container">
+            <div class="layui-row layui-col-space30 company">
+                <div class="layui-col-md3 company-info" th:each="company,stat:${companyList}">
+                    <a th:href="@{/company/detail/{id}(id=${company.id})}">
+                        <img th:src="@{/pic/companyIcon/{img}(img=${company.img})}" alt="">
+                        <div class="conpany-text">
+                            <h4>[[${company.name}]]</h4>
+                            <p>[[${company.listedStatus}]] | [[${company.size}]]</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div th:replace="front-common::footer"></div>
+    </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head th:fragment="commonCss(title,links,script,style)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title th:replace="${title}">Title</title>
+
+    <link rel="stylesheet" th:href="@{/layui/css/layui.css}">
+    <link rel="stylesheet" th:href="@{/layui/css/modules/layer/default/layer.css}">
+    <script th:src="@{/layui/layui.js}"></script>
+    <script th:src="@{/jquery-3.5.1.min.js}"></script>
+    <script th:src="@{/layer/layer.js}"></script>
+
+    <th:block th:replace="${script}"/>
+    <th:block th:replace="${links}"/>
+    <th:block th:replace="${style}"/>
+</head>
+<body>
+
+<div th:fragment="header(thispage)" class="layui-header">
+    <ul class="layui-nav">
+        <li class="layui-nav-item">
+            <a onclick="location.href='/index'" style="font-weight: bold;color: #5FB878;font-size: x-large;">IT人才招聘</a>
+        </li>
+        <li th:class="${thispage=='index'? 'layui-nav-item layui-this':'layui-nav-item'}">
+            <a th:href="@{/index}">首页</a>
+        </li>
+        <li th:class="${thispage=='job'? 'layui-nav-item layui-this':'layui-nav-item'}">
+            <a th:href="@{/personal/job}">职位</a>
+        </li>
+        <li th:class="${thispage=='company'? 'layui-nav-item layui-this':'layui-nav-item'}">
+            <a th:href="@{/personal/company}">公司</a>
+        </li>
+    </ul>
+    <ul class="layui-nav layui-layout-right">
+        <shiro:guest>
+            <li class="layui-nav-item"><a th:href="@{/login}">先登录，查看更多职位信息!</a></li>
+            <li class="layui-nav-item"><a th:href="@{/register}">立即注册</a></li>
+        </shiro:guest>
+        <shiro:user>
+            <shiro:hasRole name="user">
+                <li class="layui-nav-item"><a th:href="@{/service/resume}">我的简历</a></li>
+            </shiro:hasRole>
+            <shiro:hasRole name="hr">
+                <li class="layui-nav-item"><a th:href="@{/service/company/hr}">公司管理</a></li>
+            </shiro:hasRole>
+            <shiro:hasRole name="admin">
+                <li class="layui-nav-item"><a th:href="@{/admin/index}">后台入口</a></li>
+            </shiro:hasRole>
+            <li class="layui-nav-item layui-hide layui-show-md-inline-block">
+                <a href="javascript:;">
+                    <img th:src="@{/pic/userIcon/{img}(img=${userInfo.img})}"
+                         class="layui-nav-img">
+                    <span shiro:principal property="username"></span>
+                </a>
+                <dl class="layui-nav-child">
+                    <dd th:class="${thispage=='information'? 'layui-this':''}"><a
+                            th:href="@{/setting/information}">个人资料</a></dd>
+                    <dd th:class="${thispage=='message'? 'layui-this':''}"><a th:href="@{/setting/message}">我的私信</a>
+                    </dd>
+                    <dd><a th:href="@{/logout}">退出登录</a></dd>
+                </dl>
+            </li>
+        </shiro:user>
+    </ul>
+</div>
+
+<ul th:fragment="infoSide(thisFrame)" class=" layui-bg-cyan layui-nav layui-nav-tree" style="float: left;">
+    <li th:class="${thisFrame=='information'?'layui-nav-item layui-this':'layui-nav-item'}">
+        <a th:href="@{/setting/information}">个人信息</a>
+    </li>
+    <li th:class="${thisFrame=='password'?'layui-nav-item layui-this':'layui-nav-item'}">
+        <a th:href="@{/setting/password}">登录密码</a>
+    </li>
+</ul>
+
+<ul th:fragment="manageSide(thisFrame)" class=" layui-bg-cyan layui-nav layui-nav-tree" style="float: left;">
+    <li th:if="${hrInfo==null}" th:class="${thisFrame=='join'?'layui-nav-item layui-this':'layui-nav-item'}">
+        <a th:href="@{/service/company/join}">关联公司</a>
+    </li>
+    <li th:unless="${hrInfo==null}" th:class="${thisFrame=='hr'?'layui-nav-item layui-this':'layui-nav-item'}">
+        <a th:href="@{/service/company/hr}">HR信息</a>
+    </li>
+    <shiro:hasRole name="manager">
+        <li th:class="${thisFrame=='job'?'layui-nav-item layui-this':'layui-nav-item'}">
+            <a th:href="@{/service/company/jobManage}">岗位管理</a>
+        </li>
+        <li th:class="${thisFrame=='staff'?'layui-nav-item layui-this':'layui-nav-item'}">
+            <a th:href="@{/service/company/staffManage}">员工管理</a>
+        </li>
+        <li th:class="${thisFrame=='info'?'layui-nav-item layui-this':'layui-nav-item'}">
+            <a th:href="@{/service/company/info}">公司简介</a>
+        </li>
+    </shiro:hasRole>
+</ul>
+
+<div th:fragment="footer">
+    <p style="background-color:#ffffff;color: #7e7e7e;font-size: 10px;text-align: center">
+        <br/>
+        <br/>
+        IT人才招聘 @Talent recruitment
+        <br/>
+        <br/>
+    </p>
+</div>
+</body>
+</html>

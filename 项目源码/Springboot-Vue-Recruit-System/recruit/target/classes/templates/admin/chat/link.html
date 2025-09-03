@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="admin/end-common::commonCss(~{::title},~{},~{::script},~{::style})">
+    <title>聊天关系</title>
+    <script th:src="@{/laydate/laydate.js}"></script>
+    <style>
+        .body {
+            background-color: #f8f8f8;
+        }
+    </style>
+
+    <script type="text/html" id="bar">
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="message">记录</a>
+    </script>
+
+    <script th:inline="javascript">
+
+        layui.use(['table', 'laydate'], function () {
+            var table = layui.table;
+            var laydate = layui.laydate;
+
+            laydate.render({
+              elem: '#search-createTime'
+              , range: true
+            });
+
+            var tableIns = table.render({
+                elem: '#chatLinkTable'
+                , url: '/chat/getChatLinkByCondition'
+                ,parseData: function(res){ //将原始数据解析成 table 组件所规定的数据
+                    return {
+                        "code": res.code, //解析接口状态
+                        "msg": res.msg, //解析提示文本
+                        "count": res.data.total, //解析数据长度
+                        "data": res.data.records  //解析数据列表
+                    };
+                }
+                , where: {
+                    "username":$('#search-username').val(),
+                    "startDate":$("#search-createTime").val().split(" - ")[0],
+                    "endDate":$("#search-createTime").val().split(" - ")[1] !== null ? $("#search-createTime").val().split(" - ")[1] : ""
+                }
+                , defaultToolbar: []
+                , page: true
+                , limits: [5, 10, 20]
+                , limit: 10
+                , cols: [
+                    [
+                        {field: 'id', title: 'ID', hide: true}
+                        , {field: 'fromUserId', hide: true}
+                        , {field: 'fromUserName', title: 'a用户名'}
+                        , {field: 'toUserId', hide: true}
+                        , {field: 'toUserName', title: 'b用户名'}
+                        , {field: 'createTime', title: '创建时间'}
+                        , {title: '操作', fixed: 'right', width: 100, toolbar: '#bar'}
+                    ]
+                ]
+        });
+
+            $("#searchBtn").click(function () {
+                tableIns.reload({
+                    where: {
+                      "username": $('#search-username').val(),
+                      "startDate": $("#search-createTime").val().split(" - ")[0],
+                      "endDate": $("#search-createTime").val().split(" - ")[1] !== null ? $("#search-createTime").val().split(" - ")[1] : ""
+                    }
+                    , page: {
+                      curr: 1 //重新从第 1 页开始
+                    }
+                });
+            })
+
+            table.on('tool(chatLinkTable)', function (obj) {
+                var data = obj.data;
+                switch (obj.event) {
+                    case 'message':
+                        location.href= [['/admin/chat/message/']]+data.id;
+                };
+            });
+        });
+    </script>
+</head>
+<body>
+<div class="layui-layout layui-layout-admin">
+
+    <div th:replace="admin/end-common::header"></div>
+    <div th:replace="admin/end-common::side('link')"></div>
+
+    <div class="layui-body body">
+        <div class="layui-fluid" style="padding: 15px;">
+            <div class="layui-card">
+                <div class="layui-form layui-card-header" style="padding: 15px">
+                    <div class="layui-form-item">
+                        <div class="layui-inline" style="width:150px;">
+                            <input class="layui-input" id="search-username" autocomplete="off" placeholder="用户名">
+                        </div>
+                        <div class="layui-inline">
+                            <input type="text" id="search-createTime" placeholder="创建时间" autocomplete="off"
+                                   class="layui-input">
+                        </div>
+                        <div class="layui-inline">
+                            <button type="button" class="layui-btn" id="searchBtn">
+                                <i class="layui-icon layui-icon-search"></i> 搜索
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="layui-card-body">
+                    <div style="padding-bottom:10px;">
+                        <table class="layui-hide" id="chatLinkTable" lay-filter="chatLinkTable" lay-skin="line">
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <div th:replace="admin/end-common::footer"></div>
+</div>
+</body>
+</html>

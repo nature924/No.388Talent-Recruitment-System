@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head th:replace="admin/end-common::commonCss(~{::title},~{},~{::script},~{::style})">
+    <title>简历管理</title>
+    <script th:src="@{/layui/xm-select.js}"></script>
+    <script th:src="@{/laydate/laydate.js}"></script>
+    <style>
+        .body{
+            background-color: #f8f8f8;
+        }
+        .layui-table-cell {
+            text-align: center;
+            height: auto;
+            width: auto;
+        }
+        .layui-table img {
+            width: 70px;
+            max-height: 70px;
+        }
+        img[src=""], img:not([src]) {
+            opacity: 0;
+        }
+    </style>
+    <script type="text/html" id="bar">
+        <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a><br/>
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="delete">删除</a>
+    </script>
+    <script th:inline="javascript">
+        layui.use(['table','element','laydate','form'], function(){
+            var table = layui.table;
+            var element = layui.element;
+            var laydate = layui.laydate;
+            var form = layui.form;
+
+            laydate.render({
+                elem: '#birth'
+            });
+
+
+            $("#searchBtn").click(function () {
+                reload();
+            });
+            $("#resetBtn").click(function () {
+                tableIns.reload({
+                    where: {
+                        "username": '',
+                    }
+                    , page: {
+                        curr: 1
+                    }
+                });
+            });
+
+            var tableIns = table.render({
+                elem: '#resumeTable'
+                , url: '/resume/getByCondition'
+        , where: {
+                "username": $('#search-username').val()
+            }
+        , defaultToolbar: []
+                , page: true
+                , limits: [5, 10, 20]
+                , limit: 10
+                , cellMinWidth: 125
+                , cols: [
+                [
+                    , {field: 'id', title: 'ID', hide: true}
+                    , {field: 'userId', title: 'ID', hide: true}
+                    , {field: 'username', title: '用户名'}
+                    , {field: 'photo', title: '照片', templet: function (d) {
+                        var fileName = d.photo;
+                        return '<div><img src="'+[[@{/pic/photo/}]] + fileName + '" alt="暂无图片"></div>'
+                    }}
+                    , {field: 'name', title: '姓名'}
+                    , {field: 'sex', title: '性别'}
+                    , {field: 'birth', title: '生日'}
+                    , {field: 'age', title: '年龄'}
+                    , {field: 'phone', title: '手机'}
+                    , {field: 'email', title: '邮箱'}
+                    , {field: 'marriage', title: '婚姻状态'}
+                    , {field: 'political', title: '政治面貌'}
+                    , {field: 'salary', title: '期望薪资'}
+                    , {field: 'job', title: '应聘岗位'}
+                    , {field: 'college', title: '毕业学校'}
+                    , {field: 'major', title: '专业'}
+                    , {field: 'education', title: '学历'}
+                    , {field: 'experience', title: '工作经历'}
+                    , {field: 'technology', title: '技术能力'}
+                    , {field: 'introduction', title: '自我介绍'}
+                    , {title: '操作', fixed: 'right', width: 100, toolbar: '#bar'}
+                ]
+            ]
+                , done: function (res, curr, count) {
+                //初始化高度，使得冻结行表体高度一致
+                $(".layui-table-body tr").each(function (index, val) {
+                    $($(".layui-table-fixed .layui-table-body table tr")[index]).height(81);
+                });
+                //动态监听表体高度变化，冻结行跟着改变高度
+                $(".layui-table-body tr").resize(function () {
+                    $(".layui-table-body  tr").each(function (index, val) {
+                        $($(".layui-table-fixed .layui-table-body table tr")[index]).height($(val).height()>85?85:$(val).height());
+                    });
+                });
+                $(".layui-table-header tr").resize(function () {
+                    $(".layui-table-header  tr").each(function (index, val) {
+                        $($(".layui-table-fixed .layui-table-header table tr")[index]).height($(val).height()>85?85:$(val).height());
+                    });
+                });
+                //初始化高度，使得冻结行表头高度一致
+                $(".layui-table-header tr").each(function (index, val) {
+                    $($(".layui-table-fixed .layui-table-header table tr")[index]).height($(val).height()>85?85:$(val).height());
+                });
+            }
+        });
+
+            var rePhone = /^(13\d|14[579]|15[^4\D]|17[^49\D]|18\d)\d{8}$/;
+            var reEmail = /^\w[-\w.+]*@([A-Za-z0-9][-A-Za-z0-9]+\.)+[A-Za-z]{2,14}$/;
+            var reNumber = /^[0-9]\d*$/;
+
+            //监听工具条
+            table.on('tool(resumeTable)', function (obj) {
+                var data = obj.data;
+                switch (obj.event) {
+                    case 'delete':
+                        layer.confirm('真的删除么', function (index) {
+                            $.ajax({
+                                url: '/resume/delete/'+data.id,
+                                    type: "post",
+                                dataType: "json",
+                                success: function (n) {
+                                if (n.success) {
+                                    reload();
+                                } else {
+                                    layer.msg("删除" + data.name + "的简历失败," + n.msg);
+                                }
+                            },
+                            error: function(n) {
+                                layer.msg("删除" + data.name + "的简历失败,"+n.responseJSON.msg);
+                            }
+                        });
+                            layer.close(index);
+                        });
+                        break;
+                    case 'edit':
+                        layer.open({
+                            type: 1,
+                            area: ['850px', '560px'],
+                            shadeClose: true, //点击遮罩关闭
+                            title: '修改简历信息',
+                            btn: ['确定', '取消'],
+                            content: $('#resumeInfoFrame'),
+                            success: function (index, layero) {
+                                $("#showImg").attr('src',[['/pic/photo/']]+data.photo);
+                                $("#name").val(data.name);
+                                $("#sex").val(data.sex);
+                                $("#birth").val(data.birth);
+                                $("#age").val(data.age);
+                                $("#phone").val(data.phone);
+                                $("#email").val(data.email);
+                                $("#marriage").val(data.marriage);
+                                $("#political").val(data.political);
+                                $("#salary").val(data.salary);
+                                $("#job").val(data.job);
+                                $("#college").val(data.college);
+                                $("#major").val(data.major);
+                                $("#education").val(data.education);
+                                $("#experience").val(data.experience);
+                                $("#technology").val(data.technology);
+                                $("#introduction").val(data.introduction);
+                                form.render(null,"resumeInfoForm");
+                            },
+                            yes: function (index, layero) {
+                                if($("#name").val()==='' || $("#sex").val()==='' || $("#birth").val()==='' || $("#experience").val()==='' ||
+                                    $("#marriage").val()==='' || $("#political").val()==='' || $("#salary").val()==='' || $("#job").val()==='' ||
+                                    $("#college").val()==='' || $("#major").val()==='' || $("#education").val()==='' || $("#technology").val()==='' ){
+                                    layer.msg("请输入填写完整信息",{icon:'5'});
+                                    return;
+                                }
+                                if(!(reNumber.test($("#age").val()))){
+                                    layer.msg("请输入正确的年龄",{icon:'5'});
+                                    return;
+                                }
+                                if(!(rePhone.test($("#phone").val()))){
+                                    layer.msg("请输入正确的手机号",{icon:'5'});
+                                    return;
+                                }
+                                if(!(reEmail.test($("#email").val()))){
+                                    layer.msg("请输入正确的邮箱地址",{icon:'5'});
+                                    return;
+                                }
+
+                                var formFile = new FormData(document.getElementById('resumeInfoForm'));
+                                $.ajax({
+                                    url : [['/resume/update/']]+data.id,
+                                    type : 'post',
+                                    dataType : 'json',
+                                    data : formFile,
+                                    cache: false,
+                                    processData: false,
+                                    contentType:false,
+                                    success : function(n) {
+                                    if (n.success) {
+                                        location.reload();
+                                    }else {
+                                        layer.msg("修改简历信息失败,"+n.msg);
+                                    }
+                                },
+                                error: function(n) {
+                                    layer.msg("修改简历信息失败,"+n.responseJSON.msg);
+                                }
+                            });
+                            },
+                            end: function (res) {
+                                $("#resumeInfoFrame").css("display", 'none');
+                            }
+                        });
+                        break;
+                }
+                ;
+            });
+
+            function reload() {
+                tableIns.reload({
+                    where: {
+                        "username": $('#search-username').val()
+                    }
+                    , page: {
+                        curr: 1
+                    }
+                });
+            }
+        });
+    </script>
+</head>
+<body>
+<div class="layui-layout layui-layout-admin">
+
+    <div th:replace="admin/end-common::header"></div>
+    <div th:replace="admin/end-common::side('resume')"></div>
+
+    <div class="layui-body body">
+        <div class="layui-fluid" style="padding: 15px;">
+            <div class="layui-card">
+                <div class="layui-form layui-card-header" style="padding: 15px">
+                    <div class="layui-form-item">
+                        <div class="layui-inline" style="width:250px;">
+                            <input class="layui-input" id="search-username" autocomplete="off" placeholder="用户名">
+                        </div>
+                        <div class="layui-inline" style="float: right;">
+                            <button type="button" class="layui-btn" id="searchBtn">
+                                <i class="layui-icon layui-icon-search"></i> 搜索
+                            </button>
+                            <button  type="button" class="layui-btn" id="resetBtn">全部</button>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="layui-card-body">
+                    <div style="padding-bottom:10px;">
+                        <table class="layui-hide" id="resumeTable" lay-skin="line" lay-filter="resumeTable">
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <div th:replace="admin/end-common::footer"></div>
+</div>
+
+</body>
+<div id="resumeInfoFrame" style="display:none;">
+    <form class="layui-form"  lay-filter="resumeInfoForm" id="resumeInfoForm" style="padding-right:30px">
+        <div class="layui-form-item" style="display: flex;flex-direction: column;align-items: center;justify-content: flex-start;">
+<!--            <img th:src="@{/pic/photo/default.png}"-->
+            <img th:src="@{/pic/photo/{photo}(photo=${resumeInfo==null?'default.png':resumeInfo.photo})}"
+                 id="showImg" class="layui-nav-img" style="width: 120px;height: 120px;margin-right: 0;margin-bottom: 5px;">
+            <button class="layui-btn" type='button' value='' onclick='javascript:$("#img").click();'>上传照片</button>
+            <input id="showImgName" type='text' readonly style="border: none;text-align: center"/>
+            <input name="imgFile" id="img" placeholder="上传图标" type="file"
+                   accept="image/jpeg, image/png" maxFileCount=1 style="display:none" onchange='onHiddenFile();'/>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">应聘岗位</label>
+            <div class="layui-input-inline" style="width: 20vw;">
+                <input name="job" id="job" type="text" autocomplete="off" class="layui-input" >
+            </div>
+
+            <label class="layui-form-label">期望薪资</label>
+            <div class="layui-input-inline" style="width: 20vw;">
+                <input name="salary" id="salary" type="text" autocomplete="off" class="layui-input" >
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">姓名</label>
+            <div class="layui-input-inline" style="width: 20vw;">
+                <input name="name" id="name" type="text" autocomplete="off" class="layui-input" >
+            </div>
+
+            <label class="layui-form-label">性别</label>
+            <div class="layui-input-inline" style="width: 20vw;">
+                <select name="sex" id="sex" >
+                    <option th:each="sex,stat:${application.sexList}"
+                            th:text="${sex.value}"
+                            th:value="${sex.value}"></option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">生日</label>
+            <div class="layui-input-inline" style="width: 20vw;">
+                <input name="birth" id="birth" type="text" autocomplete="off" class="layui-input">
+            </div>
+            <label class="layui-form-label">年龄</label>
+            <div class="layui-input-inline" style="width: 20vw;">
+                <input name="age" id="age" type="text" autocomplete="off" class="layui-input" >
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">邮箱</label>
+            <div class="layui-input-inline" style="width: 20vw;">
+                <input name="email" id="email" type="text" autocomplete="off" class="layui-input" >
+            </div>
+            <label class="layui-form-label">手机</label>
+            <div class="layui-input-inline" style="width: 20vw;">
+                <input name="phone" id="phone" type="text" autocomplete="off" class="layui-input" >
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">婚姻状态</label>
+            <div class="layui-input-inline" style="width: 20vw;">
+                <select name="marriage" id="marriage" >
+                    <option th:each="marriage,stat:${application.marriageList}"
+                            th:text="${marriage.value}"
+                            th:value="${marriage.value}"></option>
+                </select>
+            </div>
+            <label class="layui-form-label">政治面貌</label>
+            <div class="layui-input-inline" style="width: 20vw;">
+                <select name="political" id="political">
+                    <option th:each="political,stat:${application.politicalList}"
+                            th:text="${political.value}"
+                            th:value="${political.value}"></option>
+                </select>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">毕业院校</label>
+            <div class="layui-input-block">
+                <input name="college" id="college" type="text" autocomplete="off" class="layui-input" >
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">专业</label>
+            <div class="layui-input-inline" style="width: 20vw;">
+                <input name="major" id="major" type="text" autocomplete="off" class="layui-input" >
+            </div>
+            <label class="layui-form-label">学历</label>
+            <div class="layui-input-inline" style="width: 20vw;">
+                <select name="education" id="education">
+                    <option th:each="education,stat:${application.educationList}"
+                            th:text="${education.value}"
+                            th:value="${education.value}"></option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">工作经历</label>
+            <div class="layui-input-block">
+                <textarea name="experience" id="experience" placeholder="请输入内容" autocomplete="off" class="layui-textarea" ></textarea>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">技能专长</label>
+            <div class="layui-input-block">
+                <textarea name="technology" id="technology" placeholder="请输入内容" autocomplete="off" class="layui-textarea" ></textarea>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">自我评价</label>
+            <div class="layui-input-block">
+                <textarea name="introduction" id="introduction"  placeholder="请输入内容" autocomplete="off" class="layui-textarea" ></textarea>
+            </div>
+        </div>
+    </form>
+</div>
+</html>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iurac.recruit.mapper.ChatMessageMapper">
+
+    <select id="getChatMessageByCondition" resultType="com.iurac.recruit.entity.ChatMessage">
+        select cm.id,cm.link_id,cm.from_user_id,u1.username as from_user_name,cm.to_user_id,u2.username as to_user_name,cm.content,cm.send_time
+        from t_chat_message cm
+        left join t_user u1 on cm.from_user_id=u1.id
+        left join t_user u2 on cm.to_user_id=u2.id
+        <where>
+            <if test="linkId!='' and linkId!=null">
+                cm.link_id = #{linkId}
+            </if>
+            <if test="linkId=='' or linkId==null">
+                <if test="usernameA!='' and usernameA!=null">
+                    ( u1.username = #{usernameA} or u2.username = #{usernameA} )
+                </if>
+                <if test="usernameB!='' and usernameB!=null">
+                    and ( u1.username = #{usernameB} or u2.username = #{usernameB} )
+                </if>
+            </if>
+            <if test="content!='' and content!=null">
+                and cm.content like concat('%',#{content},'%')
+            </if>
+            <if test="startDate!='' and startDate!=null">
+                and cm.send_time &gt;= #{startDate}
+            </if>
+            <if test="endDate!='' and endDate!=null">
+                and cm.send_time &lt;= #{endDate}
+            </if>
+        </where>
+        order by cm.send_time desc
+    </select>
+</mapper>

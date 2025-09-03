@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Error</title>
+    <link rel="stylesheet" th:href="@{/layui/css/layui.css}">
+    <script th:src="@{/layui/layui.js}"></script>
+</head>
+
+<body style="background-color: #5FB878;">
+    <div class="layui-container" style="display:flex;flex-direction: column;justify-content: center;align-items: center;">
+        <h1 style="margin-top: 20vh;"><img alt="Error" th:src="@{/image/error.png}"></h1>
+        <h1 style="font-size: 100px;font-weight: bold;">[[${status}]]</h1>
+        <h3>[[${Error}]]</h3><br/>
+        <h3>[[${message}]]</h3><br/>
+        <h3>[[${timestamp}]]</h3><br/>
+        <a class="layui-btn layui-btn-normal" th:href="@{/index}"> 返回主页</a>
+    </div>
+</body>
+</html>

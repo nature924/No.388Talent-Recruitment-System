@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iurac.recruit.mapper.ChatLinkMapper">
+
+    <select id="getChatLinkByCondition" resultType="com.iurac.recruit.entity.ChatLink">
+        select cl.id,cl.from_user_id,u1.username as from_user_name,cl.to_user_id,u2.username as to_user_name,cl.create_time
+        from t_chat_link cl
+        left join t_user u1 on cl.from_user_id=u1.id
+        left join t_user u2 on cl.to_user_id=u2.id
+        <where>
+            <if test="username!='' and username!=null">
+                ( u1.username like concat('%',#{username},'%') or u2.username like concat('%',#{username},'%') )
+            </if>
+            <if test="startDate!='' and startDate!=null">
+                and cl.create_time &gt;= #{startDate}
+            </if>
+            <if test="endDate!='' and endDate!=null">
+                and cl.create_time &lt;= #{endDate}
+            </if>
+        </where>
+    </select>
+</mapper>

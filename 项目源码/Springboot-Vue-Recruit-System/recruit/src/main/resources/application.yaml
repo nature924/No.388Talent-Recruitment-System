@@ -1,0 +1,62 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/recruitment?serverTimezone=UTC&useUnicode=true&characterEncoding=utf8&autoReconnect=true&allowMultiQueries=true&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: 1226422
+
+    druid:
+      filters: stat,wall     # 底层开启功能，stat（sql监控），wall（防火墙）
+
+      stat-view-servlet:   # 配置监控页功能
+        enabled: true
+        login-username: admin
+        login-password: admin
+        resetEnable: false
+      web-stat-filter:  # 监控web
+        enabled: true
+        urlPattern: /*
+        exclusions: '*.js,*.gif,*.jpg,*.png,*.css,*.ico,/druid/*'
+      filter:
+        stat: # 对上面filters里面的stat的详细配置
+          slow-sql-millis: 2000
+          logSlowSql: true
+          enabled: true
+        wall:
+          enabled: true
+          config:
+            drop-table-allow: false
+
+  redis:
+    client-type: jedis
+    port: 6379
+    host: 127.0.0.1
+    pasword:
+
+  thymeleaf:
+    cache: false
+    mode: LEGACYHTML5
+
+kaptcha:
+  height: 36
+  width: 110
+  content:
+    length: 4
+    source: abcdefghjklmnopqrstuvwxyzABCDEFGHJKLMNOPQRSTUVWXYZ23456789
+    space: 2
+  font:
+    color: red
+    name: Arial
+    size: 30
+  background-color:
+    from: lightGray
+    to: white
+  border:
+    enabled: false
+
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+logging.level.com.iurac.springbootshiro01.mapper: debug

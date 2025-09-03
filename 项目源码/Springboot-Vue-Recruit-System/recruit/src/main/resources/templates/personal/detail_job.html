@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="front-common :: commonCss(~{::title},~{},~{},~{::style})">
+    <title th:text="|职位-${job.job}|"></title>
+    <style type="text/css">
+        * {
+            padding: 0px;
+            margin: 0px;
+        }
+        .show {
+            padding: 40px;
+            background-color: #009688;
+        }
+        .show-row{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 15px;
+            font-weight: 400;
+            color: white;
+        }
+        .job-info {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-start;
+        }
+        .job-info img{
+            border-radius: 20px;
+            width: 100px;
+            height: 100px;
+            margin-right: 20px;
+        }
+        .job-stat {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        .other-info {
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #ffffff;
+        }
+        .other-info img{
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            margin-right: 0;
+        }
+        .other-info p{
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="layui-layout layui-layout-admin">
+    <div th:replace="front-common::header('job')"></div>
+
+    <div class="layui-layout-body" style="margin-top: 50px;background-color: #f8f8f8;">
+        <!-- 内容主体区域 -->
+        <div class="show">
+            <div class="layui-container">
+                <div class="show-row">
+                    <div class="job-info">
+                        <div>
+                            <span style="max-width: 380px;white-space: nowrap;text-overflow: ellipsis;font-size: 35px;font-weight: 400" th:text="${job.job}"></span>
+                            <span style="color: #FF5722;font-size: 25px;font-weight: 600;" th:text="${job.salary}"></span>
+                        </div>
+                        <span style="margin-top: 10px;" th:text="|${job.business} · ${job.experience} · ${job.education}|"></span>
+                    </div>
+                    <div class="job-stat">
+                        <span style="font-size: 20px;" th:text="${job.area}"></span>
+                        <span style="font-size: 14px;color: #d2d2d2" th:text="|发布于${job.createTime}|"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="layui-container" style="min-height: 50vh;margin-top: 10px;">
+            <div class="layui-row layui-col-space30">
+                <div class="layui-col-md10">
+                    <div class="layui-panel" style="background-color: #ffffff;">
+                        <fieldset class="layui-elem-field layui-field-title">
+                            <legend style="font-weight: bold;">职位描述</legend>
+                        </fieldset>
+                        <pre class="layui-field-box" style="font-weight: 200;font-size: 14px;font-family: arial">[[${job.description}]]</pre>
+
+                        <fieldset class="layui-elem-field layui-field-title">
+                            <legend style="font-weight: bold;">详细地址</legend>
+                        </fieldset>
+                        <pre class="layui-field-box" style="font-weight: 200;font-size: 14px;font-family: arial">[[${job.address}]]</pre>
+
+                    </div>
+                </div>
+                <div class="layui-col-md2">
+                    <div class="layui-row" >
+                        <div class="layui-col-md12 other-info" style="margin-bottom: 20px;">
+                            <img th:src="@{/pic/companyIcon/{img}(img=${company.img})}" class="layui-nav-img">
+                            <p style="font-weight: bold;font-size: x-large;"><span th:text="${company.name}"></span></p>
+                            <p style="font-size: 14px;"><span th:text="|${company.listedStatus} · ${company.size}|"></span></p>
+                            <hr class="layui-border-cyan">
+                            <p style="font-size: large;"><span th:text="${hr.name}"></span></p>
+                            <p style="font-size: 14px;"><span th:text="${hr.position}"></span></p>
+                            <div>
+                                <a th:href="@{/message/newChat/{id}(id=${hr.id})}" class="layui-btn-sm layui-border-green">联系</a>
+                                <a th:href="@{/company/detail/{id}(id=${company.id})}" class="layui-btn-sm layui-border-green">详情</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div th:replace="front-common::footer"></div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head th:replace="admin/end-common::commonCss(~{::title},~{},~{::script},~{::style})">
+    <title>公司管理</title>
+    <script th:src="@{/layui/xm-select.js}"></script>
+    <script th:src="@{/laydate/laydate.js}"></script>
+    <style>
+        .body{
+            background-color: #f8f8f8;
+        }
+        .layui-table-cell {
+            text-align: center;
+            height: auto;
+            max-height: 70px;
+        }
+        .layui-table img {
+            width: 70px;
+            max-height: 70px;
+        }
+        .layui-form-select dl {
+            max-height: 250px;
+        }
+        img[src=""], img:not([src]) {
+            opacity: 0;
+        }
+    </style>
+    <script type="text/html" id="bar">
+        <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a><br/>
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="delete">删除</a>
+    </script>
+    <script th:inline="javascript">
+        layui.use(['table','element','laydate','form'], function(){
+            var table = layui.table;
+            var element = layui.element;
+            var laydate = layui.laydate;
+            var form = layui.form;
+
+            laydate.render({
+                elem: '#search-registrationTime'
+                ,range: true
+            });
+            laydate.render({
+                elem: '#registrationTime'
+            });
+
+
+            $("#searchBtn").click(function () {
+                reload();
+            });
+            $("#resetBtn").click(function () {
+                tableIns.reload({
+                    where: {
+                        "name": '',
+                        "startDate": '',
+                        "endDate":'',
+                        "listedStatus": '',
+                        "size": ''
+                    }
+                    , page: {
+                        curr: 1
+                    }
+                });
+            });
+
+            var tableIns = table.render({
+                elem: '#companyTable'
+                , url: '/company/getByCondition'
+                , where: {
+                    "name": $('#search-name').val(),
+                    "startDate": $("#search-registrationTime").val().split(" - ")[0],
+                    "endDate": $("#search-registrationTime").val().split(" - ")[1]==null?$("#search-registrationTime").val().split(" - ")[1]:"",
+                    "listedStatus": $('#search-listedStatus').val(),
+                    "size": $('#search-size').val()
+                }
+                , defaultToolbar: []
+                , page: true
+                , limits: [5, 10, 20]
+                , limit: 10
+                , cols: [
+                    [
+                        , {field: 'id', title: 'ID', hide: true}
+                        , {field: 'name', title: '公司名'}
+                        , {field: 'img', title: '图标', templet: function (d) {
+                            var fileName = d.img;
+                            return '<div><img src="'+[[@{/pic/companyIcon/}]] + fileName + '" alt="暂无图片"></div>'
+                        }}
+                        , {field: 'listedStatus', title: '融资阶段'}
+                        , {field: 'size', title: '规模'}
+                        , {field: 'introduction', title: '简介'}
+                        , {field: 'registrationTime', title: '注册时间'}
+                        , {title: '操作', fixed: 'right', width: 100, toolbar: '#bar'}
+                    ]
+                ]
+                , done: function (res, curr, count) {
+                    //初始化高度，使得冻结行表体高度一致
+                    $(".layui-table-body  tr").each(function (index, val) {
+                        $($(".layui-table-fixed .layui-table-body table tr")[index]).height(110);
+                    });
+                    //动态监听表体高度变化，冻结行跟着改变高度
+                    $(".layui-table-body  tr").resize(function () {
+                        $(".layui-table-body  tr").each(function (index, val) {
+                            $($(".layui-table-fixed .layui-table-body table tr")[index]).height($(val).height()>110?110:$(val).height());
+                        });
+                    });
+                    $(".layui-table-header  tr").resize(function () {
+                        $(".layui-table-header  tr").each(function (index, val) {
+                            $($(".layui-table-fixed .layui-table-header table tr")[index]).height($(val).height()>110?110:$(val).height());
+                        });
+                    });
+                    //初始化高度，使得冻结行表头高度一致
+                    $(".layui-table-header  tr").each(function (index, val) {
+                        $($(".layui-table-fixed .layui-table-header table tr")[index]).height($(val).height()>110?110:$(val).height());
+                    });
+                }
+            });
+
+
+            //监听工具条
+            table.on('tool(companyTable)', function (obj) {
+                var data = obj.data;
+                switch (obj.event) {
+                    case 'delete':
+                        layer.confirm('真的删除么', function (index) {
+                            $.ajax({
+                                url: '/company/delete/'+data.id,
+                                    type: "post",
+                                dataType: "json",
+                                success: function (n) {
+                                if (n.success) {
+                                    reload();
+                                } else {
+                                    layer.msg("删除" + data.name + "失败," + n.msg);
+                                }
+                            },
+                            error: function(n) {
+                                layer.msg("删除" + data.name + "失败,"+n.responseJSON.msg);
+                            }
+                        });
+                            layer.close(index);
+                        });
+                        break;
+                    case 'edit':
+                        layer.open({
+                            type: 1,
+                            area: ['800px', '560px'],
+                            shadeClose: true, //点击遮罩关闭
+                            title: '修改公司信息',
+                            btn: ['确定', '取消'],
+                            content: $('#companyInfoFrame'),
+                            success: function (index, layero) {
+                                $("#showImg").attr('src',[['/pic/companyIcon/']]+data.img);
+                                $("#name").val(data.name);
+                                $("#registrationTime").val(data.registrationTime);
+                                $("#listedStatus").val(data.listedStatus);
+                                $("#size").val(data.size);
+                                $("#introduction").val(data.introduction);
+                                form.render(null,"companyInfoForm");
+                            },
+                            yes: function (index, layero) {
+                                if($("#name").val()==='' || $("#registrationTime").val()==='' || $("#listedStatus").val()==='' || $("#size").val()==='' ||
+                                    $("#introduction").val()===''){
+                                    layer.msg("请输入填写完整信息",{icon:'5'});
+                                    return;
+                                }
+
+                                var formFile = new FormData(document.getElementById('companyInfoForm'));
+                                $.ajax({
+                                    url : [['/company/update/']]+data.id,
+                                    type : 'post',
+                                    dataType : 'json',
+                                    data : formFile,
+                                    cache: false,
+                                    processData: false,
+                                    contentType:false,
+                                    success : function(n) {
+                                    if (n.success) {
+                                        location.reload();
+                                    }else {
+                                        layer.msg("修改公司信息失败,"+n.msg);
+                                    }
+                                },
+                                error: function(n) {
+                                    layer.msg("修改公司信息失败,"+n.responseJSON.msg);
+                                }
+                            });
+                            },
+                            end: function (res) {
+                                $("#companyInfoFrame").css("display", 'none');
+                            }
+                        });
+                        break;
+                }
+                ;
+            });
+
+            function reload() {
+                tableIns.reload({
+                    where: {
+                        "name": $('#search-name').val(),
+                        "startDate": $("#search-registrationTime").val().split(" - ")[0],
+                        "endDate": $("#search-registrationTime").val().split(" - ")[1]==null?$("#search-registrationTime").val().split(" - ")[1]:"",
+                        "listedStatus": $('#search-listedStatus').val(),
+                        "size": $('#search-size').val()
+                    }
+                    , page: {
+                        curr: 1
+                    }
+                });
+            }
+
+            $("#img").change(function (){
+                if(this.files.length){
+                    let file = this.files[0];
+                    let reader = new FileReader();
+                    reader.onload = function(){
+                        // 当 FileReader 读取文件时候，读取的结果会放在 FileReader.result 属性中
+                        $("#showImg").attr("src",this.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+        })
+        function onHiddenFile() {
+            var dd = $("#img").val().split("\\");
+            $("#showImgName").val(dd[dd.length - 1]);
+        }
+    </script>
+</head>
+<body>
+<div class="layui-layout layui-layout-admin">
+
+    <div th:replace="admin/end-common::header"></div>
+    <div th:replace="admin/end-common::side('company')"></div>
+
+    <div class="layui-body body">
+        <div class="layui-fluid" style="padding: 15px;">
+            <div class="layui-card">
+                <div class="layui-form layui-card-header" style="padding: 15px">
+                    <div class="layui-form-item">
+                        <div class="layui-inline" style="width:150px;">
+                            <input class="layui-input" id="search-name" autocomplete="off" placeholder="公司名">
+                        </div>
+                        <div class="layui-inline" style="margin-right:0">
+                            <div class="layui-form-mid">融资阶段</div>
+                            <div class="layui-input-inline">
+                                <select id="search-listedStatus" lay-search lay-verify="required|number">
+                                    <option value="">请选择融资阶段</option>
+                                    <option th:each="listedStatus,stat:${application.listedStatusList}"
+                                            th:text="${listedStatus.value}"
+                                            th:value="${listedStatus.value}"></option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="layui-inline" style="margin-right:0">
+                            <div class="layui-form-mid">公司规模</div>
+                            <div class="layui-input-inline">
+                                <select id="search-size" lay-search>
+                                    <option value="">请选择公司规模</option>
+                                    <option th:each="size,stat:${application.sizeList}"
+                                            th:text="${size.value}"
+                                            th:value="${size.value}"></option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="layui-inline">
+                            <input type="text" id="search-registrationTime" placeholder="注册时间" autocomplete="off" class="layui-input">
+                        </div>
+                        <div class="layui-inline" style="float: right;">
+                            <button type="button" class="layui-btn" id="searchBtn">
+                                <i class="layui-icon layui-icon-search"></i> 搜索
+                            </button>
+                            <button  type="button" class="layui-btn" id="resetBtn">全部</button>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="layui-card-body">
+                    <div style="padding-bottom:10px;">
+                        <table class="layui-hide" id="companyTable" lay-skin="line" lay-filter="companyTable">
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <div th:replace="admin/end-common::footer"></div>
+</div>
+
+</body>
+<div id="companyInfoFrame" style="display:none;">
+    <form class="layui-form" lay-filter="companyInfoForm" id="companyInfoForm" style="padding-right:30px">
+        <div class="layui-form-item" style="display: flex;flex-direction: column;align-items: center;justify-content: flex-start;">
+            <img th:src="@{/pic/companyIcon/company.png}"
+                 id="showImg" class="layui-nav-img" style="width: 120px;height: 120px;margin-right: 0;margin-bottom: 5px;">
+            <button class="layui-btn" type='button' value='' onclick='javascript:$("#img").click();'>上传图标</button>
+            <input id="showImgName" type='text' readonly style="border: none;text-align: center"/>
+            <input name="imgFile" id="img" placeholder="上传图标" type="file"
+                   accept="image/jpeg, image/png" maxFileCount=1 style="display:none" onchange='onHiddenFile();'/>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">公司名</label>
+            <div class="layui-input-block">
+                <input name="name" id="name" type="text" lay-verify="required" placeholder="请输入公司名" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">注册时间</label>
+            <div class="layui-input-block">
+                <input name="registrationTime" id="registrationTime" type="text" placeholder="请输入公司注册时间" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">融资阶段</label>
+            <div class="layui-input-block">
+                <select name="listedStatus" id="listedStatus" >
+                    <option th:each="listedStatus,stat:${application.listedStatusList}"
+                            th:text="${listedStatus.value}"
+                            th:value="${listedStatus.value}"></option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">公司规模</label>
+            <div class="layui-input-block">
+                <select name="size" id="size">
+                    <option th:each="size,stat:${application.sizeList}"
+                            th:text="${size.value}"
+                            th:value="${size.value}"></option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">公司简介</label>
+            <div class="layui-input-block">
+                <textarea name="introduction" id="introduction" placeholder="请输入内容" autocomplete="off" class="layui-textarea" ></textarea>
+            </div>
+        </div>
+    </form>
+</div>
+</html>

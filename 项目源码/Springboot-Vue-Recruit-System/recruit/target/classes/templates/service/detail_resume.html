@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head th:replace="front-common :: commonCss(~{::title},~{},~{},~{::style})">
+    <title>我的简历</title>
+    <style type="text/css">
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            border: #f8f8f8 30px solid;
+            padding: 0;
+        }
+        .content {
+            background-color: #ffffff;
+            min-height: 100vh;
+            width: 90%;
+        }
+        .resume_l{
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding-top: 50px;
+        }
+        .resume_r{
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding-top: 50px;
+        }
+        .photo_box{
+            width: 150px;
+            height: 150px;
+            box-sizing: border-box;
+            padding: 3px;
+            border-radius: 100%;
+            background-color: #5FB878;
+        }
+        .photo_box img{
+            width: 100%;
+            height: 100%;
+            border-radius: 100%;
+            text-align: center;
+        }
+        .resume_name{
+            font-size: 30px;
+            text-align: center;
+            font-weight: 700;
+            margin-top: 30px;
+            margin-bottom: 5px;
+        }
+        .left_title{
+            text-align: center;
+            width: 85%;
+            background-color: #5FB878;
+            line-height: 28px;
+            color: #ffffff;
+            margin-bottom: 10px;
+            font-size: 15px;
+            margin-top: 10px;
+        }
+        .right_title{
+            text-align: left;
+            width: 100%;
+            line-height: 28px;
+            margin-bottom: 5px;
+            font-size: 15px;
+            margin-top: 15px;
+        }
+        .right_title i{
+            padding: 5px;
+            font-size: 20px;
+            background-color: #5FB878;
+            color: #ffffff;
+            border-radius: 100%;
+            margin-right: 10px;
+        }
+        .left_info{
+            text-align: left;
+            width: 80%;
+            font-size: 14px;
+        }
+        .info_list{
+            margin-top: 5px;
+        }
+        .education{
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            width: 100%;
+        }
+        .experience{
+            text-align: left;
+            width: 95%;
+            border-radius: 5px;
+            border: 1px #f4f4f4 solid;
+            background-color: #fefefe;
+            min-height: 100px;
+            max-height: 250px;
+        }
+        .technology{
+            text-align: left;
+            width: 95%;
+            border-radius: 5px;
+            border: 1px #f4f4f4 solid;
+            background-color: #fefefe;
+            min-height: 100px;
+            max-height: 250px;
+        }
+        .introduction{
+            text-align: left;
+            width: 95%;
+            border-radius: 5px;
+            border: 1px #f4f4f4 solid;
+            background-color: #fefefe;
+            min-height: 100px;
+            max-height: 200px;
+        }
+    </style>
+</head>
+<body>
+<div class="layui-layout layui-layout-admin">
+
+    <ul class="layui-nav">
+        <li class="layui-nav-item">
+            <a onclick="location.href='/index'" style="font-weight: bold;color: #5FB878;font-size: x-large;">IT人才招聘</a>
+        </li>
+    </ul>
+
+    <div class="layui-layout-body" style="background-color: #f8f8f8;">
+        <div class="layui-container container">
+            <div class="content">
+                <div class="layui-fluid layui-row layui-col-space5" style="padding-bottom: 25px;">
+                    <div class="layui-col-md3 resume_l">
+                        <div class="photo_box">
+                            <img th:src="@{/pic/photo/{photo}(photo=${resumeInfo==null?'default.png':resumeInfo.photo})}"/>
+                        </div>
+                        <div class="resume_name">个人简历</div>
+                        <div class="left_info">
+                            <div class="info_list"><span th:text="|求职岗位 : ${resumeInfo.job}|"></span></div>
+                            <div class="info_list"><span th:text="|希望薪资 : ${resumeInfo.salary}|"></span></div>
+                        </div>
+                        <div class="left_title">基本信息 </span></div>
+                        <div class="left_info">
+                            <div class="info_list"><span th:text="|姓&ensp;&ensp;名 : ${resumeInfo.name}|"></span></div>
+                            <div class="info_list"><span th:text="|性&ensp;&ensp;别 : ${resumeInfo.sex}|"></span></div>
+                            <div class="info_list"><span th:text="|生&ensp;&ensp;日 : ${resumeInfo.birth}|"></span></div>
+                            <div class="info_list"><span th:text="|年&ensp;&ensp;龄 : ${resumeInfo.age}|"></span></div>
+                            <div class="info_list"><span th:text="|婚姻状况 : ${resumeInfo.marriage}|"></span></div>
+                            <div class="info_list"><span th:text="|政治面貌 : ${resumeInfo.political}|"></span></div>
+                        </div>
+                        <div class="left_title">联系方式 </span></div>
+                        <div class="left_info">
+                            <div class="info_list"><span th:text="|手&ensp;&ensp;机 : ${resumeInfo.phone}|"></span></div>
+                            <div class="info_list"><span th:text="|邮&ensp;&ensp;箱 : ${resumeInfo.email}|"></span></div>
+                        </div>
+                    </div>
+                    <div class="layui-col-md9 resume_r">
+                        <div class="right_title">
+                            <i class="layui-icon layui-icon-read"></i>
+                            教育背景
+                            <hr class="layui-border-green" width="100%">
+                        </div>
+                        <div class="education">
+                            <p th:text="${resumeInfo.college}"></p>
+                            <p th:text="${resumeInfo.major}"></p>
+                            <p th:text="${resumeInfo.education}"></p>
+                        </div>
+                        <div class="right_title">
+                            <i class="layui-icon layui-icon-time"></i>
+                            工作经验
+                            <hr class="layui-border-green" width="100%">
+                        </div>
+                        <div class="experience">
+                            <pre th:text="${resumeInfo.experience}">
+                            </pre>
+                        </div>
+                        <div class="right_title">
+                            <i class="layui-icon layui-icon-util"></i>
+                            技术能力
+                            <hr class="layui-border-green" width="100%">
+                        </div>
+                        <div class="technology">
+                            <pre th:text="${resumeInfo.technology}">
+                            </pre>
+                        </div>
+                        <div class="right_title">
+                            <i class="layui-icon layui-icon-chat"></i>
+                            自我介绍
+                            <hr class="layui-border-green" width="100%">
+                        </div>
+                        <div class="introduction">
+                            <pre th:text="${resumeInfo.introduction}">
+                            </pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div th:replace="front-common::footer"></div>
+    </div>
+
+</div>
+</body>
+
+</html>

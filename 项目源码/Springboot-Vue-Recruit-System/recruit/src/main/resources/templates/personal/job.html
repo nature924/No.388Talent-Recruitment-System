@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head th:replace="front-common :: commonCss(~{::title},~{},~{},~{::style})">
+    <title>IT人才招聘-岗位</title>
+    <style type="text/css">
+        * {
+            padding: 0px;
+            margin: 0px;
+        }
+        .filter {
+            padding: 40px;
+            background-color: #ffffff;
+            box-shadow: darkgrey 0 0 10px 0 ;
+            margin-bottom: 20px;
+        }
+        .search-input{
+            display: flex;
+            justify-content: center;
+            align-items:center;
+            padding-left: 50px;
+            padding-right: 50px;
+            height: 70px;
+        }
+        .search-input input{
+            height: 50px;
+            width: 90%;
+        }
+        .search-input button{
+            height: 50px;
+            width: 10%;
+        }
+        .personalInfo{
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            align-items: center;
+        }
+        .personalInfo img{
+            height: 80px;
+            width: 80px;
+            border-radius: 25px;
+            margin-right: 0px;
+        }
+        .personalInfo p{
+            margin-bottom: 10px;
+        }
+        .job-grid{
+            background-color: #ffffff;
+            border: solid 10px #f8f8f8;
+        }
+        .job-grid span{
+            margin-right: 5px;
+            white-space: nowrap;
+            display: inline-block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 50%;
+            cursor:pointer
+        }
+        .job-info2{
+            margin: 5px 0 5px 0;
+        }
+    </style>
+</head>
+<body>
+<div class="layui-layout layui-layout-admin">
+
+    <div th:replace="front-common::header('job')"></div>
+
+    <div class="layui-layout-body" style="margin-top: 50px;background-color: #f8f8f8;">
+        <div class="filter">
+            <div class="layui-container">
+                <form class="layui-form" lay-filter="jobInfoForm">
+                    <div class="layui-form-item search-input">
+                        <input name="jobName" type="text" autocomplete="off" placeholder="搜索职位" class="layui-input">
+                        <button type="submit" lay-filter="submit"  class="layui-btn" lay-submit><i style="font-size: x-large" class="layui-icon layui-icon-search"></i> </button>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">学历要求</label>
+                        <div class="layui-input-inline">
+                            <select name="education" lay-search>
+                                <option value="">请选择学历要求</option>
+                                <option th:each="education,stat:${application.educationList}"
+                                        th:text="${education.value}"
+                                        th:value="${education.value}"></option>
+                            </select>
+                        </div>
+                        <label class="layui-form-label">发布时间</label>
+                        <div class="layui-input-inline">
+                            <select name="createTime" lay-search>
+                                <option value="">请选择发布时间</option>
+                                <option value="1">一天以内</option>
+                                <option value="3">三天以内</option>
+                                <option value="7">七天以内</option>
+                                <option value="15">十五天以内</option>
+                                <option value="30">一个月以内</option>
+                            </select>
+                        </div>
+                        <label class="layui-form-label">工作经验</label>
+                        <div class="layui-input-inline">
+                            <select name="experience" lay-search>
+                                <option value="">请选择工作经验</option>
+                                <option th:each="experience,stat:${application.experienceList}"
+                                        th:text="${experience.value}"
+                                        th:value="${experience.value}"></option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">工作地点</label>
+                        <div class="layui-input-inline">
+                            <select lay-search lay-filter="province">
+                                <option value="">请选择工作地点</option>
+                                <option th:each="province,stat:${application.provinceList}"
+                                        th:text="${province.province}"
+                                        th:value="${province.id}"></option>
+                            </select>
+                        </div>
+                        <div class="layui-input-inline">
+                            <select id="city" name="city" lay-search>
+                            </select>
+                        </div>
+                        <label class="layui-form-label">岗位类型</label>
+                        <div class="layui-input-inline">
+                            <select lay-search lay-filter="type">
+                                <option value="">请选择岗位类型</option>
+                                <option th:each="type,stat:${application.typeList}"
+                                        th:text="${type.type}"
+                                        th:value="${type.id}"></option>
+                            </select>
+                        </div>
+                        <div class="layui-input-inline">
+                            <select id="business" name="business" lay-search>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="layui-container">
+            <div class="layui-row layui-col-space30">
+                <div class="layui-col-md10">
+                    <div class="flow-default layui-row layui-col-space30" id="JobInfoFlow">
+                    </div>
+                </div>
+                <div class="layui-col-md2">
+                    <div class="layui-row" style="background-color: #ffffff;">
+                        <div class="layui-col-md12 personalInfo">
+                            <shiro:guest>　　
+                                <img th:src="@{/pic/userIcon/guest.png}"
+                                     class="layui-nav-img">
+                                <p style="font-weight: bold;font-size: x-large;">先登录,联系公司!</p>
+                            </shiro:guest>
+                            <shiro:user>　　
+                                <img th:src="@{/pic/userIcon/{img}(img=${userInfo.img})}"
+                                     class="layui-nav-img">
+                                <p style="font-weight: bold;font-size: x-large;"><span shiro:principal property="username"></span></p>
+                                <p style="font-size: 16px;"><span th:text="${userInfo.phone==null?'':userInfo.phone}"></span></p>
+                                <p style="font-size: 16px;"><span th:text="${userInfo.email==null?'':userInfo.email}"></span></p>
+                                <a th:href="@{/service/resume}" class="layui-btn-sm layui-btn-primary layui-border-green" style="width:100%;text-align: center">编辑简历</a>
+                            </shiro:user>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 内容主体区域 -->
+
+        <div th:replace="front-common::footer"></div>
+    </div>
+
+</div>
+</body>
+
+<script th:inline="javascript">
+    layui.use(['form','flow'], function() {
+        var form = layui.form;
+        var flow = layui.flow;
+        var $ = layui.jquery;
+
+        form.on('select(province)', function(data){
+            $("#city").html("");
+            $.ajax({
+                url: '/dictionary/getCityList/'+data.value,
+                type:"get",
+                dataType:"json",
+                success:function (data){
+                    var html = "";
+                    $.each(data,function (i,n){
+                        html += "<option value='"+n.city+"'>"+n.city+"</option>";
+                    });
+                $("#city").html(html);
+                form.render(null,"jobInfoForm");
+                }
+            });
+            form.render(null,"jobInfoForm");
+        });
+
+        form.on('select(type)', function(data){
+            $("#business").html("");
+            $.ajax({
+                url: '/dictionary/getBusinessList/'+data.value,
+                type:"get",
+                dataType:"json",
+                success:function (data){
+                    var html = "";
+                    $.each(data,function (i,n){
+                        html += "<option value='"+n.business+"'>"+n.business+"</option>";
+                    });
+                $("#business").html(html);
+                form.render(null,"jobInfoForm");
+                }
+            });
+            form.render(null,"jobInfoForm");
+        });
+
+
+        loadFlow();
+        form.on('submit(submit)', function(data){
+            $("#JobInfoFlow").empty();
+            loadFlow();
+            return false;
+        });
+
+        function loadFlow(){
+            flow.load({
+                elem: '#JobInfoFlow'
+                ,end:
+                    "<div class='layui-col-md12' style='text-align: center'>" +
+                    "<hr/>" +
+                    "<a>已经拉到底啦</a>" +
+                    "</div>"
+                , done: function (page, next) {
+                    $.ajax({
+                        url: '/job/getJobsByConditionInPage?page='+(page-1),
+                        type:"get",
+                        data:form.val('jobInfoForm'),
+                        dataType:"json",
+                        success:function (data){
+                            var lis = [];
+                            layui.each(data.jobs, function(index, item){
+                                lis.push("<div class='layui-col-md6 job-grid'>"+
+                                         "   <a class='job-info1' href='"+[[@{/job/detail/}]]+item.id+"'>"+
+                                         "       <span style='color: #5FB878;font-size: 16px'>"+item.job+"</span>"+
+                                         "       <span style='color: #5FB878;font-size: 16px'>"+item.area+"</span>"+
+                                         "   </a><br/>"+
+                                         "   <a class='job-info2' href='"+[[@{/job/detail/}]]+item.id+"'>"+
+                                         "       <span s    tyle='color: #FF5722;font-size: 16px'>"+item.salary+"</span>"+
+                                         "       <span style='color: #404040;font-size: 14px'>"+item.business+" | "+item.education+"</span>"+
+                                         "       <span style='color: #404040;font-size: 12px'>"+item.hrName+"("+item.hrPosition+")</span>"+
+                                         "   </a>"+
+                                         "   <div class='job-info3'>"+
+                                         "       <span style='color: #cccccc;font-size: 12px'>发布于"+item.createTime+"</span>"+
+                                         "       <a href='"+[[@{/message/newChat/}]]+item.hrId+"' class='layui-btn layui-btn-xs' style='float:right;'>联系他/她"+
+                                         "       </a>"+
+                                         "   </div>"+
+                                         "</div>");
+                            });
+                            next(lis.join(''), data.count === 12);
+                        }
+                    });
+                }
+            });
+        }
+
+    })
+</script>
+</html>

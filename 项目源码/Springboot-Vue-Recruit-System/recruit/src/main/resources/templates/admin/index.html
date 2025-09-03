@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head th:replace="admin/end-common::commonCss(~{::title},~{},~{::script},~{::style})">
+    <title>主页</title>
+    <script th:src="@{/echarts/echarts.min.js}"></script>
+    <style type="text/css">
+        .body{
+            background-color: #f8f8f8;
+        }
+        .shortcut i{
+            display: inline-block;
+            width: 100%;
+            height: 100px;
+            line-height: 100px;
+            text-align: center;
+            border-radius: 2px;
+            font-size: 40px;
+            background-color: #F8F8F8;
+            color: #333;
+
+        }
+        .shortcut cite{
+            position: relative;
+            top: 5px;
+            display: block;
+            color: #666;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+            font-size: 18px;
+        }
+        .shortcut a{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .data{
+            max-width: 100%;
+            height: 87px;
+            border-radius: 2px;
+            background-color: #F8F8F8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-around;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="layui-layout layui-layout-admin">
+
+    <div th:replace="admin/end-common::header"></div>
+    <div th:replace="admin/end-common::side('index')"></div>
+
+    <div class="layui-body body">
+        <div class="layui-fluid" style="padding: 15px;">
+            <div class="layui-row layui-col-space30">
+                <div class="layui-col-md6">
+                    <div class="layui-card">
+                        <div class="layui-card-header">快捷方式</div>
+                        <div class="layui-card-body">
+
+                            <div style="width: 100%; height: 280px;">
+                                <ul class="layui-row layui-col-space10 layui-this shortcut">
+                                    <li class="layui-col-md3">
+                                        <a th:href="@{/admin/chat/link}">
+                                            <i class="layui-icon layui-icon-at"></i>
+                                            <cite>聊天关系</cite>
+                                        </a>
+                                    </li>
+                                    <li class="layui-col-md3">
+                                        <a th:href="@{/admin/chat/message}">
+                                            <i class="layui-icon layui-icon-log"></i>
+                                            <cite>聊天记录</cite>
+                                        </a>
+                                    </li>
+                                    <li class="layui-col-md3">
+                                        <a th:href="@{/admin/system/dictionary}">
+                                            <i class="layui-icon layui-icon-read"></i>
+                                            <cite>数据字典</cite>
+                                        </a>
+                                    </li>
+                                    <li class="layui-col-md3">
+                                        <a th:href="@{/logout}">
+                                            <i class="layui-icon layui-icon-logout"></i>
+                                            <cite>退出登录</cite>
+                                        </a>
+                                    </li>
+
+                                    <li class="layui-col-md3">
+                                        <a th:href="@{/admin/manage/user}">
+                                            <i class="layui-icon layui-icon-username"></i>
+                                            <cite>用户管理</cite>
+                                        </a>
+                                    </li>
+                                    <li class="layui-col-md3">
+                                        <a th:href="@{/admin/manage/resume}">
+                                            <i class="layui-icon layui-icon-survey"></i>
+                                            <cite>简历管理</cite>
+                                        </a>
+                                    </li>
+                                    <li class="layui-col-md3">
+                                        <a th:href="@{/admin/manage/company}">
+                                            <i class="layui-icon layui-icon-senior"></i>
+                                            <cite>公司管理</cite>
+                                        </a>
+                                    </li>
+                                    <li class="layui-col-md3">
+                                        <a th:href="@{/admin/manage/job}">
+                                            <i class="layui-icon layui-icon-email"></i>
+                                            <cite>职位管理</cite>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-col-md6">
+                    <div class="layui-card">
+                        <div class="layui-card-header">数据统计</div>
+                        <div class="layui-card-body">
+                            <div class="" style="width: 100%; height: 280px;">
+                                <ul class="layui-row layui-col-space10">
+                                    <li class="layui-col-md4">
+                                        <div class="data">
+                                            <span style="font-size: 20px;color:#009688">注册用户</span>
+                                            <span style="font-size: 40px;font-weight: 400" th:text="${userCount}">0</span>
+                                        </div>
+                                    </li>
+                                    <li class="layui-col-md4">
+                                        <div class="data">
+                                            <span style="font-size: 20px;color:#009688">简历数量</span>
+                                            <span style="font-size: 40px;font-weight: 400" th:text="${resumeCount}">0</span>
+                                        </div>
+                                    </li>
+                                    <li class="layui-col-md4">
+                                        <div class="data">
+                                            <span style="font-size: 20px;color:#009688">面试Hr</span>
+                                            <span style="font-size: 40px;font-weight: 400" th:text="${hrCount}">0</span>
+                                        </div>
+                                    </li>
+                                    <li class="layui-col-md4">
+                                        <div class="data">
+                                            <span style="font-size: 20px;color:#009688">入驻企业</span>
+                                            <span style="font-size: 40px;font-weight: 400" th:text="${companyCount}">0</span>
+                                        </div>
+                                    </li>
+                                    <li class="layui-col-md4">
+                                        <div class="data">
+                                            <span style="font-size: 20px;color:#009688">招聘岗位</span>
+                                            <span style="font-size: 40px;font-weight: 400" th:text="${jobCount}">0</span>
+                                        </div>
+                                    </li>
+                                    <li class="layui-col-md4">
+                                        <div class="data">
+                                            <span style="font-size: 20px;color:#009688">遍布城市</span>
+                                            <span style="font-size: 40px;font-weight: 400" th:text="${cityCount}">0</span>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layui-col-md12" style="margin-bottom: 50px;">
+                    <div class="layui-card">
+                        <div class="layui-card-header">图表展示</div>
+                        <div class="layui-card-body">
+                            <div class="layui-carousel" id="chart" lay-filter="chart">
+                                <div carousel-item>
+                                    <div id="companyChart" style="max-width: 100%;height:400px;"></div>
+                                    <div id="jobChart" style="max-width: 100%;height:400px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:replace="admin/end-common::footer"></div>
+</div>
+<script th:inline="javascript">
+    var myCompanyChart;
+    var myJobChart;
+    layui.use('carousel', function(){
+
+        var carousel = layui.carousel;
+        //建造实例
+        carousel.render({
+            elem: '#chart'
+            ,width: '100%'
+            ,height: '400px'
+            ,arrow: 'none'
+            ,autoplay: false
+            ,indicator: 'inside'
+            ,trigger : 'mouseover'
+        });
+
+        initJobChart();
+        initCompanyChart();
+
+
+        carousel.on('change(chart)', function(obj){
+            console.log(obj.index); //当前条目的索引
+            myCompanyChart.resize();
+            myJobChart.resize();
+        });
+
+    });
+    function initJobChart() {
+        $.ajax({
+            url: '/job/chart',
+            type: 'get',
+            dataType: 'json',
+            success:function (data){
+                var jobChartDom = document.getElementById('jobChart');
+                myJobChart = echarts.init(jobChartDom);
+                var jobOption;
+
+                jobOption = {
+                    title: [{
+                        text: '岗位分布',
+                        left: 'center',
+                    }, {
+                        subtext: '岗位类型',
+                        left: '25%',
+                        top: '75%',
+                        textAlign: 'center'
+                    }, {
+                        subtext: '岗位城市',
+                        left: '75%',
+                        top: '75%',
+                        textAlign: 'center'
+                    }],
+                    tooltip: {
+                        trigger: 'item'
+                    },
+                    legend: [{
+                        orient: 'vertical',
+                        left: 'left',
+                        data: data.jobBusiness.dataList
+                    },{
+                        orient: 'vertical',
+                        left: 'right',
+                        data: data.jobArea.dataList
+                    }],
+                    series: [
+                        {
+                            name: '岗位分布',
+                            type: 'pie',
+                            left: 0,
+                            right: '50%',
+                            radius: '50%',
+                            emphasis: {
+                                itemStyle: {
+                                    shadowBlur: 10,
+                                    shadowOffsetX: 0,
+                                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                }
+                            },
+                            data: data.jobBusiness.dataList
+                        }, {
+                            name: '岗位分布',
+                            type: 'pie',
+                            left: '50%',
+                            right: 0,
+                            radius: '50%',
+                            emphasis: {
+                                itemStyle: {
+                                    shadowBlur: 10,
+                                    shadowOffsetX: 0,
+                                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                }
+                            },
+                            data: data.jobArea.dataList
+                        }
+                    ]
+                };
+
+                myJobChart.setOption(jobOption);
+                myJobChart.resize();
+            }
+        });
+    }
+
+    function initCompanyChart() {
+        $.ajax({
+            url: '/company/chart',
+            type: 'get',
+            dataType: 'json',
+            success:function (data){
+                var companyChartDom = document.getElementById('companyChart');
+                myCompanyChart = echarts.init(companyChartDom);
+                var companyOption;
+
+                companyOption = {
+                    title: [{
+                        text: '企业分布',
+                        left: 'center',
+                    }, {
+                        subtext: '融资阶段',
+                        left: '25%',
+                        top: '75%',
+                        textAlign: 'center'
+                    }, {
+                        subtext: '公司规模',
+                        left: '75%',
+                        top: '75%',
+                        textAlign: 'center'
+                    }],
+                    tooltip: {
+                        trigger: 'item'
+                    },
+                    legend: [{
+                        orient: 'vertical',
+                        left: 'left',
+                        data: data.companyListedStatus.dataList
+                    },{
+                        orient: 'vertical',
+                        left: 'right',
+                        data: data.companySize.dataList
+                    }],
+                    series: [
+                        {
+                            name: '岗位分布',
+                            type: 'pie',
+                            left: 0,
+                            right: '50%',
+                            radius: '50%',
+                            emphasis: {
+                                itemStyle: {
+                                    shadowBlur: 10,
+                                    shadowOffsetX: 0,
+                                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                }
+                            },
+                            data: data.companyListedStatus.dataList
+                        }, {
+                            name: '岗位分布',
+                            type: 'pie',
+                            left: '50%',
+                            right: 0,
+                            radius: '50%',
+                            emphasis: {
+                                itemStyle: {
+                                    shadowBlur: 10,
+                                    shadowOffsetX: 0,
+                                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                }
+                            },
+                            data: data.companySize.dataList
+                        }
+                    ]
+                };
+
+                myCompanyChart.setOption(companyOption);
+                myCompanyChart.resize();
+            }
+        });
+    }
+</script>
+</body>
+</html>

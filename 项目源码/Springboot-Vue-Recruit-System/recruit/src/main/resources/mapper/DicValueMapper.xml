@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iurac.recruit.mapper.DicValueMapper">
+    <update id="updateOrderNo">
+        update t_dic_value set order_no = order_no+1 where order_no &gt;= #{orderNo} and type_id = #{typeId}
+    </update>
+
+    <select id="getDicValue" resultType="com.iurac.recruit.entity.DicValue">
+        select v.id, v.value, v.order_no, v.type_id, t.type
+        from t_dic_value v
+        left join t_dic_type t on v.type_id = t.id
+        order by v.type_id,v.order_no
+        limit #{skipCount},#{limit}
+    </select>
+</mapper>

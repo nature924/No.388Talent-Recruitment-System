@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head th:replace="admin/end-common::commonCss(~{::title},~{},~{::script},~{::style})">
+    <title>聊天关系</title>
+    <script th:src="@{/laydate/laydate.js}"></script>
+    <style>
+        .body{
+            background-color: #f8f8f8;
+        }
+    </style>
+
+    <script th:inline="javascript">
+        layui.use(['table','element','laydate'], function(){
+            var table = layui.table;
+            var element = layui.element;
+            var laydate = layui.laydate;
+
+            laydate.render({
+                elem: '#search-createTime'
+                ,range: true
+            });
+
+            var linkId = [[${linkId==null?'':linkId}]];
+
+            $("#resetBtn").click(function () {
+                linkId = '';
+                tableIns.reload({
+                    where: {
+                        "linkId": linkId,
+                        "usernameA": $('#search-usernameA').val(),
+                        "usernameB": $('#search-usernameB').val(),
+                        "content": $('#search-content').val(),
+                        "startDate": $("#search-createTime").val().split(" - ")[0],
+                        "endDate": $("#search-createTime").val().split(" - ")[1] !== null ? $("#search-createTime").val().split(" - ")[1] : ""
+                    }
+                    , page: {
+                        curr: 1
+                    }
+                });
+            })
+
+            $("#searchBtn").click(function () {
+                tableIns.reload({
+                    where: {
+                        "linkId": linkId,
+                        "usernameA": $('#search-usernameA').val(),
+                        "usernameB": $('#search-usernameB').val(),
+                        "content": $('#search-content').val(),
+                        "startDate": $("#search-createTime").val().split(" - ")[0],
+                        "endDate": $("#search-createTime").val().split(" - ")[1] !== null ? $("#search-createTime").val().split(" - ")[1] : ""
+                    }
+                    , page: {
+                        curr: 1
+                    }
+                });
+            })
+
+
+            var tableIns = table.render({
+                elem: '#chatMessageTable'
+                ,parseData: function(res){
+                    return {
+                        "code": res.code,
+                        "msg": res.msg,
+                        "count": res.data.total,
+                        "data": res.data.records
+                    };
+                }
+                , url: '/chat/getChatMessageByCondition'
+                , toolbar: '#toolbar'
+                , where: {
+                    "linkId": linkId,
+                    "usernameA": $('#search-usernameA').val(),
+                    "usernameB": $('#search-usernameB').val(),
+                    "content": $('#search-content').val(),
+                    "startDate": $("#search-createTime").val().split(" - ")[0],
+                    "endDate": $("#search-createTime").val().split(" - ")[1] !== null ? $("#search-createTime").val().split(" - ")[1] : ""
+                }
+                , defaultToolbar: []
+                , page: true
+                , limits: [5, 10, 20]
+                , limit: 10
+                , cols: [
+                    [
+                    {field: 'id', title: 'ID', hide: true}
+                    , {field: 'linkId', hide: true}
+                    , {field: 'fromUserId', hide: true}
+                    , {field: 'fromUserName', title: 'a用户名'}
+                    , {field: 'toUserId', hide: true}
+                    , {field: 'toUserName', title: 'b用户名'}
+                    , {field: 'content', title: '内容'}
+                    , {field: 'sendTime', title: '发送时间'}
+                    ]
+                ]
+            });
+
+        });
+    </script>
+</head>
+<body>
+<div class="layui-layout layui-layout-admin">
+
+    <div th:replace="admin/end-common::header"></div>
+    <div th:replace="admin/end-common::side('message')"></div>
+
+    <div class="layui-body body">
+        <div class="layui-fluid" style="padding: 15px;">
+            <div class="layui-card">
+                <div class="layui-form layui-card-header" style="padding: 15px">
+                    <div class="layui-form-item">
+                        <div class="layui-inline" style="width:150px;">
+                            <input class="layui-input" id="search-usernameA" autocomplete="off" placeholder="a用户名">
+                        </div>
+                        <div class="layui-inline" style="width:150px;">
+                            <input class="layui-input" id="search-usernameB" autocomplete="off" placeholder="b用户名">
+                        </div>
+                        <div class="layui-inline" style="width:300px;">
+                            <input class="layui-input" id="search-content" autocomplete="off" placeholder="聊天内容">
+                        </div>
+                        <div class="layui-inline">
+                            <input type="text" id="search-createTime" placeholder="发送时间" autocomplete="off" class="layui-input">
+                        </div>
+                        <div class="layui-inline">
+                            <button type="button" class="layui-btn" id="searchBtn">
+                                <i class="layui-icon layui-icon-search"></i> 搜索
+                            </button>
+                            <button type="button" class="layui-btn" id="resetBtn">全部</button>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="layui-card-body">
+                    <div style="padding-bottom:10px;">
+                        <table class="layui-hide" id="chatMessageTable" lay-skin="line" lay-filter="chatMessageTable">
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <div th:replace="admin/end-common::footer"></div>
+</div>
+</body>
+</html>

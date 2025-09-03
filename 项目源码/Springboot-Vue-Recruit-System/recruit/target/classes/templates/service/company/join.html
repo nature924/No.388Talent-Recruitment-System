@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head th:replace="front-common :: commonCss(~{::title},~{},~{},~{::style})">
+    <title>公司入驻</title>
+    <style type="text/css">
+        .container{
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            border: #f8f8f8 30px solid;
+            padding: 0;
+        }
+        .content{
+            background-color: #ffffff;
+            float: right;
+            min-height: 75vh;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class="layui-layout layui-layout-admin">
+
+    <div th:replace="front-common::header('')"></div>
+
+    <div class="layui-layout-body" style="margin-top: 50px;background-color: #f8f8f8;">
+        <div class="layui-container container">
+            <div th:replace="front-common::manageSide('join')"></div>
+            <div class="content">
+                <div class="layui-fluid">
+                    <fieldset class="layui-elem-field layui-field-title" style="margin-top: 50px;">
+                        <legend>您还没有关联公司，关联方式如下</legend>
+                    </fieldset>
+                    <div class="layui-collapse" lay-filter="test">
+                        <div class="layui-colla-item">
+                            <h2 class="layui-colla-title">公司已经入驻本网站</h2>
+                            <div class="layui-colla-content layui-show">
+                                <p>请联系所在公司，公司管理者可以将您与公司关联。</p>
+                            </div>
+                        </div>
+                        <div class="layui-colla-item">
+                            <h2 class="layui-colla-title">公司未入驻本网站</h2>
+                            <div class="layui-colla-content layui-show">
+                                <p>点击此处办理<a id="join" style="font-weight: bold">[公司入驻]</a>，填写公司相关信息即可入驻！</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div th:replace="front-common::footer"></div>
+    </div>
+
+</div>
+<script th:inline="javascript">
+    layui.use(['form','laydate'], function() {
+        var form = layui.form;
+        var laydate = layui.laydate;
+        var $ = layui.jquery;
+
+        laydate.render({
+            elem: '#registrationTime'
+        });
+
+        $("#join").click(function (){
+            layer.open({
+                type: 1,
+                area: ['800px', '560px'],
+                shadeClose: false,
+                title: '公司入驻',
+                btn: ['确定', '取消'],
+                content: $('#joinCompanyFrame'),
+                success: function (index, layero){
+                    $("#companyInfoForm")[0].reset();
+                    layui.form.render();
+                },
+                yes: function (index, layero){
+                    var formFile = new FormData(document.getElementById('companyInfoForm'));
+                    $.ajax({
+                        url : [[@{/company/join}]],
+                        type : 'post',
+                        dataType : 'json',
+                        data : formFile,
+                        cache: false,
+                        processData: false,
+                        contentType:false,
+                        success : function(n) {
+                            if (n.success) {
+                                location.reload();
+                            }else {
+                                layer.msg("关联公司失败"+n.msg);
+                            }
+                        },
+                        error: function(n) {
+                            layer.msg("关联公司失败,"+n.responseJSON.msg);
+                        }
+                    });
+                },
+                end: function (res) {
+                    $("#joinCompanyFrame").css("display",'none');
+                }
+            });
+
+        })
+
+        $("#img").change(function (){
+            if(this.files.length){
+                let file = this.files[0];
+                let reader = new FileReader();
+                reader.onload = function(){
+                    // 当 FileReader 读取文件时候，读取的结果会放在 FileReader.result 属性中
+                    $("#showImg").attr("src",this.result);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    })
+    function onHiddenFile() {
+        var dd = $("#img").val().split("\\");
+        $("#showImgName").val(dd[dd.length - 1]);
+    }
+
+</script>
+</body>
+<div id="joinCompanyFrame" style="display:none;">
+    <form class="layui-form" lay-filter="companyInfoForm" id="companyInfoForm" style="padding-right:30px">
+        <div class="layui-form-item" style="display: flex;flex-direction: column;align-items: center;justify-content: flex-start;">
+            <img th:src="@{/pic/companyIcon/company.png}"
+                 id="showImg" class="layui-nav-img" style="width: 120px;height: 120px;margin-right: 0;margin-bottom: 5px;">
+            <button class="layui-btn" type='button' value='' onclick='javascript:$("#img").click();'>上传图标</button>
+            <input id="showImgName" type='text' readonly style="border: none;text-align: center"/>
+            <input name="imgFile" id="img" placeholder="上传图标" type="file"
+                   accept="image/jpeg, image/png" maxFileCount=1 style="display:none" onchange='onHiddenFile();'/>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">公司名</label>
+            <div class="layui-input-block">
+                <input name="name" type="text" lay-verify="required" placeholder="请输入公司名" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">注册时间</label>
+            <div class="layui-input-block">
+                <input name="registrationTime" lay-verify="required" id="registrationTime" type="text" placeholder="请输入公司注册时间" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">融资阶段</label>
+            <div class="layui-input-block">
+                <select name="listedStatus" lay-search lay-verify="required|number">
+                    <option th:each="listedStatus,stat:${application.listedStatusList}"
+                            th:text="${listedStatus.value}"
+                            th:value="${listedStatus.value}"></option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">公司规模</label>
+            <div class="layui-input-block">
+                <select name="size" lay-search lay-verify="required|number">
+                    <option th:each="size,stat:${application.sizeList}"
+                            th:text="${size.value}"
+                            th:value="${size.value}"></option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">公司简介</label>
+            <div class="layui-input-block">
+                <textarea name="introduction" lay-verify="required" placeholder="请输入内容" autocomplete="off" class="layui-textarea" ></textarea>
+            </div>
+        </div>
+    </form>
+</div>
+</html>

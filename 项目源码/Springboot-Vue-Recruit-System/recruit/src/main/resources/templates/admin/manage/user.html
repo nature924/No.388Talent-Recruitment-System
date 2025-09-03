@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head th:replace="admin/end-common::commonCss(~{::title},~{},~{::script},~{::style})">
+    <title>用户管理</title>
+    <script th:src="@{/layui/xm-select.js}"></script>
+    <script th:src="@{/laydate/laydate.js}"></script>
+    <style>
+        .body{
+            background-color: #f8f8f8;
+        }
+        .layui-table-cell {
+            text-align: center;
+            height: auto;
+            white-space: normal;
+        }
+        .layui-table img {
+            width: 70px;
+            max-height: 70px;
+        }
+        .layui-form-select dl {
+            max-height: 250px;
+        }
+        img[src=""], img:not([src]) {
+            opacity: 0;
+        }
+    </style>
+
+    <script type="text/html" id="toolbar">
+        <div class="layui-btn-container">
+            <button lay-event="deletes" class="layui-btn layui-btn-danger">删除选中行</button>
+            <button lay-event="save" class="layui-btn layui-btn-normal">新增</button>
+        </div>
+    </script>
+    <script type="text/html" id="bar">
+        <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="delete">删除</a><br/>
+        <a class="layui-btn layui-btn-warm layui-btn-xs" lay-event="lock">封禁/解封</a>
+    </script>
+    <script th:inline="javascript">
+        layui.use(['table','element','laydate','form'], function(){
+            var table = layui.table;
+            var element = layui.element;
+            var laydate = layui.laydate;
+            var form = layui.form;
+
+            laydate.render({
+                elem: '#search-createTime'
+                ,range: true
+            });
+
+            $("#search-role").html("");
+            $("role").html("");
+            $.ajax({
+                url: '/dictionary/getRoleList',
+                type:"get",
+                dataType:"json",
+                success:function (data){
+                    var selectHtml = "<option value=\"\">请选择角色</option>";
+                    var checkHtml = '';
+                    $.each(data,function (i,n){
+                        selectHtml += "<option value='"+n.id+"'>"+n.role+"</option>";
+                        checkHtml += "<input type='checkbox' name='role' value='"+n.id+"' id='"+n.id+"' lay-skin='primary' title='"+n.role+"'>"
+                    });
+                    $("#search-role").html(selectHtml);
+                    $("#role").html(checkHtml);
+                    form.render(null,"searchUserInfoForm");
+                }
+            });
+
+            $("#searchBtn").click(function () {
+                reload();
+            });
+            $("#resetBtn").click(function () {
+                tableIns.reload({
+                    where: {
+                        "username": '',
+                        "startDate": '',
+                        "endDate": '',
+                        "role": '',
+                        "locked": ''
+                    }
+                    , page: {
+                        curr: 1
+                    }
+                });
+            });
+
+            var tableIns = table.render({
+                elem: '#userTable'
+                , url: '/user/getByCondition'
+                , toolbar: '#toolbar'
+                , where: {
+                    "username": $('#search-username').val(),
+                    "startDate": $("#search-createTime").val().split(" - ")[0],
+                    "endDate": $("#search-createTime").val().split(" - ")[1]!=null?$("#search-createTime").val().split(" - ")[1]:"",
+                    "role": $('#search-role').val(),
+                    "locked": ''
+                }
+                , defaultToolbar: []
+                , page: true
+                , limits: [5, 10, 20]
+                , limit: 10
+                , cols: [
+                    [
+                        {type: 'checkbox', fixed: 'left'}
+                        , {field: 'id', title: 'ID', hide: true}
+                        , {field: 'username', title: '用户名'}
+                        , {field: 'img', title: '头像', templet: function (d) {
+                            var fileName = d.img;
+                            return '<div><img src="'+[[@{/pic/userIcon/}]] + fileName + '" alt="暂无图片"></div>'
+                        }}
+                        , {field: 'createTime', title: '注册时间'}
+                        , {field: 'locked', title: '头像', templet: function (d) {
+                            var lock = d.locked;
+                            if(lock*1!==0){
+                                return '<span style="color:red;">已锁定</span>';
+                            }
+                            return '<span>正常</span>';
+                        }}
+                        , {field: 'roleList', title: '角色' ,templet: function(d){
+                            var html = '';
+                            for(i in d.roleList){
+                                if(d.roleList[i]!==null) {
+                                    html += d.roleList[i].role + '\n';
+                                }
+                            }
+                            return '<span>'+ html +'</span>';
+                        }}
+                        , {title: '操作', fixed: 'right', width: 135, toolbar: '#bar'}
+                    ]
+                ], done: function (res, curr, count) {
+                    //初始化高度，使得冻结行表体高度一致
+                    $(".layui-table-body tr").each(function (index, val) {
+                        $($(".layui-table-fixed .layui-table-body table tr")[index]).height($(val).height());
+                    });
+                    //动态监听表体高度变化，冻结行跟着改变高度
+                    $(".layui-table-body tr").resize(function () {
+                        $(".layui-table-body  tr").each(function (index, val) {
+                            $($(".layui-table-fixed .layui-table-body table tr")[index]).height($(val).height());
+                        });
+                    });
+                    $(".layui-table-header tr").resize(function () {
+                        $(".layui-table-header  tr").each(function (index, val) {
+                            $($(".layui-table-fixed .layui-table-header table tr")[index]).height($(val).height());
+                        });
+                    });
+                    //初始化高度，使得冻结行表头高度一致
+                    $(".layui-table-header tr").each(function (index, val) {
+                        $($(".layui-table-fixed .layui-table-header table tr")[index]).height($(val).height());
+                    });
+                }
+            });
+
+            var rePhone = /^(13\d|14[579]|15[^4\D]|17[^49\D]|18\d)\d{8}$/;
+            var reEmail = /^\w[-\w.+]*@([A-Za-z0-9][-A-Za-z0-9]+\.)+[A-Za-z]{2,14}$/;
+
+            //监听工具条
+            table.on('tool(userTable)', function (obj) {
+                var data = obj.data;
+                switch (obj.event) {
+                    case 'delete':
+                        layer.confirm('真的删除么', function (index) {
+                            $.ajax({
+                                url : [['/user/delete/']]+data.id,
+                                type : 'post',
+                                dataType : 'json',
+                                success : function(n) {
+                                    if (n.success) {
+                                        reload();
+                                    }else {
+                                        layer.msg("删除用户失败,"+n.msg);
+                                    }
+                                },
+                                error: function(n) {
+                                    layer.msg("删除用户失败,"+n.responseJSON.msg);
+                                }
+                            });
+                            layer.close(index);
+                        });
+                        break;
+                    case 'lock':
+                        layer.confirm('真的封禁/解封么', function (index) {
+                            $.ajax({
+                                url : [['/user/lock/']]+data.id,
+                                type : 'post',
+                                dataType : 'json',
+                                success : function(n) {
+                                    if (n.success) {
+                                        reload();
+                                    }
+                                },
+                                error: function(n) {
+                                    layer.msg("操作失败,"+n.responseJSON.msg);
+                                }
+                            });
+                            layer.close(index);
+                        });
+                        break;
+                    case 'edit':
+                        layer.open({
+                            type: 1,
+                            area: ['800px', '520px'],
+                            shadeClose: true, //点击遮罩关闭
+                            title: '修改用户信息',
+                            btn: ['确定', '取消'],
+                            content: $('#userInfoFrame'),
+                            success: function (index, layero) {
+                                $("#userInfoForm")[0].reset();
+                                $("#showImg").attr('src',[['/pic/userIcon/']]+data.img);
+                                $("#username").val(data.username);
+                                $("#username").attr("disabled",'disabled');
+                                $("#password").val();
+                                $("#confPassword").val();
+                                $("#phone").val(data.phone);
+                                $("#email").val(data.email);
+
+                                $("[name='role']").removeAttr("checked");
+                                for(i in data.roleList){
+                                    if(data.roleList[i]!==null) {
+                                        $('#'+data.roleList[i].id).attr("checked",'true');
+                                    }
+                                }
+                                layui.form.render();
+                            },
+                            yes: function (index, layero) {
+                                var password = $("#password").val();
+                                var confPassword = $("#confPassword").val();
+                                var phone = $("#phone").val();
+                                var email = $("#email").val();
+                                var role =[];
+                                $('input[name="role"]:checked').each(function(){
+                                    role.push($(this).val());
+                                });
+
+                                if(password===''){
+                                    layer.msg("请输入密码",{icon:'5'});
+                                    return;
+                                }
+                                if(password!==confPassword){
+                                    layer.msg("两次密码不一致",{icon:'5'});
+                                    return;
+                                }
+                                if(role.length===0){
+                                    layer.msg("请选择角色",{icon:'5'});
+                                    return;
+                                }
+                                if(!(rePhone.test(phone))){
+                                    layer.msg("请输入正确的手机号",{icon:'5'});
+                                    return;
+                                }
+                                if(!(reEmail.test(email))){
+                                    layer.msg("请输入正确的邮箱地址",{icon:'5'});
+                                    return;
+                                }
+
+                                var formFile = new FormData(document.getElementById('userInfoForm'));
+                                console.log(JSON.stringify(formFile));
+                                $.ajax({
+                                    url : [['/user/update/']]+data.id,
+                                    type : 'post',
+                                    dataType : 'json',
+                                    data :formFile,
+                                    cache: false,
+                                    processData: false,
+                                    contentType:false,
+                                    success : function(n) {
+                                        if (n.success) {
+                                            layer.msg("修改用户信息成功");
+                                            layer.close(index);
+                                            reload();
+                                        }else {
+                                            layer.msg("修改用户信息失败,"+n.msg);
+                                        }
+                                    },
+                                    error: function(n) {
+                                        layer.msg("修改用户信息失败,"+n.responseJSON.msg);
+                                    }
+                                });
+                            },
+                            end: function (res) {
+                                $("#username").removeAttr("disabled");
+                                $("#userInfoFrame").css("display", 'none');
+                            }
+                        });
+                        break;
+                }
+                ;
+            });
+            table.on('toolbar(userTable)', function (obj) {
+                var checkStatus = table.checkStatus(obj.config.id);
+                switch (obj.event) {
+                    case 'deletes':
+                        var data = checkStatus.data;
+                        var size = data.length;
+                        console.log(data);
+                        if (size != 0) {
+                            layer.confirm('真的删除么', function (index) {
+                                for (let i = 0; i < size; i++) {
+                                    $.ajax({
+                                        url : [['/user/delete/']]+data[i].id,
+                                        type : 'post',
+                                        dataType : 'json',
+                                        success : function(n) {
+                                            if (n.success) {
+                                                reload();
+                                            }else {
+                                                layer.msg("删除用户失败,"+n.msg);
+                                            }
+                                        },
+                                        error: function(n) {
+                                            layer.msg("删除用户失败,"+n.responseJSON.msg);
+                                        }
+                                    });
+                                }
+                                layer.close(index);
+                                reload();
+                            });
+                        } else {
+                            layer.msg("请勾选要删除的图书");
+                        }
+                        break;
+                    case 'save':
+                        layer.open({
+                            type: 1,
+                            area: ['800px', '520px'],
+                            shadeClose: true, //点击遮罩关闭
+                            title: '添加用户',
+                            btn: ['确定', '取消'],
+                            content: $('#userInfoFrame'),
+                            success: function (index, layero) {
+                                $("#userInfoForm")[0].reset();
+                                $("#showImg").attr('src',[['/pic/userIcon/default.png']]);
+                                $("[name='role']").removeAttr("checked");
+                                layui.form.render();
+                            },
+                            yes: function (index, layero) {
+                                var username = $("#username").val();
+                                var password = $("#password").val();
+                                var confPassword = $("#confPassword").val();
+                                var phone = $("#phone").val();
+                                var email = $("#email").val();
+                                var role =[];
+                                $('input[name="role"]:checked').each(function(){
+                                    role.push($(this).val());
+                                });
+
+                                if(username==='' || password===''){
+                                    layer.msg("请输入用户名或密码",{icon:'5'});
+                                    return;
+                                }
+                                if(password!==confPassword){
+                                    layer.msg("两次密码不一致",{icon:'5'});
+                                    return;
+                                }
+                                if(role.length===0){
+                                    layer.msg("请选择角色",{icon:'5'});
+                                    return;
+                                }
+                                if(!(rePhone.test(phone))){
+                                    layer.msg("请输入正确的手机号",{icon:'5'});
+                                    return;
+                                }
+                                if(!(reEmail.test(email))){
+                                    layer.msg("请输入正确的邮箱地址",{icon:'5'});
+                                    return;
+                                }
+
+                                var formFile = new FormData(document.getElementById('userInfoForm'));
+                                console.log(JSON.stringify(formFile));
+                                $.ajax({
+                                    url : [['/user/save']],
+                                    type : 'post',
+                                    dataType : 'json',
+                                    data :formFile,
+                                    cache: false,
+                                    processData: false,
+                                    contentType:false,
+                                    success : function(n) {
+                                        if (n.success) {
+                                            layer.msg("添加用户成功");
+                                            layer.close(index);
+                                            reload();
+                                        }else {
+                                            layer.msg("添加用户失败,"+n.msg);
+                                        }
+                                    },
+                                    error: function(n) {
+                                        layer.msg("添加用户失败,"+n.responseJSON.msg);
+                                    }
+                                });
+                            },
+                            end: function (res) {
+                                $("#userInfoFrame").css("display", 'none');
+                            }
+                        });
+                        break;
+                }
+                ;
+            });
+
+            function reload() {
+                tableIns.reload({
+                    where: {
+                        "username": $('#search-username').val(),
+                        "startDate": $("#search-createTime").val().split(" - ")[0],
+                        "endDate": $("#search-createTime").val().split(" - ")[1]!=null?$("#search-createTime").val().split(" - ")[1]:"",
+                        "role": $('#search-role').val(),
+                        "locked": $('#search-locked').is(':checked')?'0':'1'
+                    }
+                    , page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                });
+            }
+
+            $("#img").change(function (){
+                if(this.files.length){
+                    let file = this.files[0];
+                    let reader = new FileReader();
+                    reader.onload = function(){
+                        $("#showImg").attr("src",this.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+        });
+
+        function onHiddenFile() {
+            var dd = $("#img").val().split("\\");
+            $("#showImgName").val(dd[dd.length - 1]);
+        }
+    </script>
+</head>
+<body>
+<div class="layui-layout layui-layout-admin">
+
+    <div th:replace="admin/end-common::header"></div>
+    <div th:replace="admin/end-common::side('user')"></div>
+
+    <div class="layui-body body">
+        <div class="layui-fluid" style="padding: 15px;">
+            <div class="layui-card">
+                <form class="layui-form layui-card-header" style="padding: 15px" lay-filter="searchUserInfoForm" id="searchUserInfoForm">
+                    <div class="layui-form-item">
+                        <div class="layui-inline" style="width:150px;">
+                            <input class="layui-input" id="search-username" autocomplete="off" placeholder="用户名">
+                        </div>
+                        <div class="layui-inline">
+                            <input type="text" id="search-createTime" placeholder="注册时间" autocomplete="off" class="layui-input">
+                        </div>
+                        <div class="layui-inline" style="margin-right: 0;">
+                            <div class="layui-form-mid">角色</div>
+                            <div class="layui-input-inline">
+                                <select id="search-role" lay-search>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="layui-inline"  style="width:150px;position: relative;bottom: 5px;left: 20px;">
+                            <input type="checkbox" id="search-locked" checked="" lay-text="正常|封禁" lay-skin="switch">
+                        </div>
+                        <div class="layui-inline" style="float: right;">
+                            <button type="button" class="layui-btn" id="searchBtn">
+                                <i class="layui-icon layui-icon-search"></i> 搜索
+                            </button>
+                            <button  type="button" class="layui-btn" id="resetBtn">全部</button>
+                        </div>
+
+                    </div>
+                </form>
+
+                <div class="layui-card-body">
+                    <div style="padding-bottom:10px;">
+                        <table class="layui-hide" id="userTable" lay-skin="line" lay-filter="userTable">
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <div th:replace="admin/end-common::footer"></div>
+</div>
+
+</body>
+<div id="userInfoFrame" style="display:none;">
+    <form class="layui-form" lay-filter="userInfoForm" id="userInfoForm" style="padding-right:30px">
+        <div class="layui-form-item" style="display: flex;flex-direction: column;align-items: center;justify-content: flex-start;">
+            <img th:src="@{/pic/userIcon/default.png}"
+                 id="showImg" class="layui-nav-img" style="width: 120px;height: 120px;margin-right: 0;margin-bottom: 5px;">
+            <button class="layui-btn" type='button' value='' onclick='javascript:$("#img").click();'>上传图标</button>
+            <input id="showImgName" type='text' readonly style="border: none;text-align: center"/>
+            <input name="imgFile" id="img" placeholder="上传图标" type="file"
+                   accept="image/jpeg, image/png" maxFileCount=1 style="display:none" onchange='onHiddenFile();'/>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">用户名</label>
+            <div class="layui-input-block">
+                <input id="username" name="username" type="text" placeholder="请输入用户名" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">密码</label>
+            <div class="layui-input-block">
+                <input id="password" name="password" type="password" placeholder="请输入密码" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">确认密码</label>
+            <div class="layui-input-block">
+                <input id="confPassword" type="password" placeholder="请再次输入密码" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">角色</label>
+            <div class="layui-input-block" id="role">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">手机</label>
+            <div class="layui-input-block">
+                <input id="phone" name="phone" type="text" placeholder="请输入手机" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">邮箱</label>
+            <div class="layui-input-block">
+                <input id="email" name="email" type="text" placeholder="请输入邮箱" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+    </form>
+</div>
+</html>

@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head th:replace="front-common :: commonCss(~{::title},~{},~{},~{::style})">
+    <title>我的私信</title>
+    <style type="text/css">
+        * {
+            padding: 0px;
+            margin: 0px;
+        }
+        .container{
+            margin-top: 25px;
+            height: 550px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding-bottom: 15px;
+        }
+        .left-menu{
+            float: left;
+            height: 100%;
+            width: 320px;
+            background-color: #2e2e2e;
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+            border: #3d3d3d 1px solid;
+        }
+        .left-menu img{
+            height: 50px;
+            width: 50px;
+        }
+        .right-content{
+            float: right;
+            height: 100%;
+            width: 680px;
+            border-bottom-right-radius: 10px;
+            border-top-right-radius: 10px;
+            border: #3d3d3d 1px solid;
+            background-color: #ffffff;
+        }
+        .menu-title{
+            font-size: 18px;
+            color: #ffffff;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            border-bottom: #666666 1px solid;
+            padding-left: 20px;
+        }
+        .chat-box{
+            font-size: 18px;
+            color: #ffffff;
+            height: 70px;
+            display: flex;
+            background-color: #3d3d3d;
+            align-items: center;
+            border-bottom: #666666 1px solid;
+            padding-left: 20px;
+            padding-right: 20px;
+        }
+        .latestMessage{
+            font-size: 8px;
+            color: #999999;
+            width: 80%;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: inline-block;
+            overflow: hidden;
+        }
+        .lastedTime{
+            font-size: 6px;
+            text-align: right;
+            color: #999999;
+            width: 30%;
+        }
+        .content-title{
+            font-size: 18px;
+            color: #3d3d3d;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            border-bottom: #ebebeb 1px solid;
+            padding-left: 20px;
+        }
+        .content-message{
+            width: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            height: 300px;
+            border-bottom: #ebebeb 1px solid;
+        }
+        .content-message li{
+            margin-bottom: 10px;
+        }
+        .content-edit{
+            font-size: 14px;
+            height: 135px;
+            border-bottom: #ebebeb 1px solid;
+            padding: 3px;
+        }
+        .content-edit textarea{
+            width: 100%;
+            height: 100%;
+            border: 0;
+            resize: none;
+        }
+        .content-footer{
+            font-size: 8px;
+            height: 35px;
+            color: #cccccc;
+            display: flex;
+            flex-direction: row-reverse;
+            align-items: center;
+            padding-left: 20px;
+            padding-right: 20px;
+        }
+        .msg-item{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-around;;
+            margin-bottom: 5px;
+        }
+        .msg-item .timeText{
+            text-align: center;
+            font-size: 8px;
+            color: #3d3d3d;
+        }
+        .msg-item .messageText{
+            width: 100%;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
+            padding-right: 15px;
+        }
+        .msg-item .messageText .msg1{
+            background-color: #9EEA6A;
+            padding: 5px;
+            max-width: 90%;
+            word-break: break-word;
+            border-radius: 5px;
+        }
+        .msg-item .messageText .msg2{
+            background-color: #f4f4f4;
+            padding: 5px;
+            max-width: 90%;
+            word-break: break-word;
+            border-radius: 5px;
+        }
+        .msg-item .messageText img{
+            width: 28px;
+            border-radius: 30px;
+            margin: 0 10px 0 25px;
+        }
+    </style>
+</head>
+<body>
+<div class="layui-layout layui-layout-admin">
+
+    <div th:replace="front-common::header('message')"></div>
+
+    <div class="layui-layout-body" style="margin-top: 50px;background-color: #f8f8f8;">
+        <div class="layui-container container">
+                <div class="left-menu">
+                    <div class="menu-title">
+                        <img th:src="@{/pic/userIcon/{img}(img=${userInfo.img})}">
+                        <span>当前用户：</span>
+                        <span th:text="${userInfo.username}"></span>
+                    </div>
+                    <div style="overflow: hidden;">
+                        <ul id="chatList" style="width: 340px;overflow-y: auto;overflow-x: hidden;height: 460px;">
+
+                        </ul>
+                    </div>
+                </div>
+                <div class="right-content">
+                    <div class="content-title">
+                        <span id="userName"></span>
+                    </div>
+                    <div class="content-message" id="messageContent">
+                        <ul id="message-content">
+<!--                            <li class="msg-item">-->
+<!--                                <span class="timeText">2020-02-02 02:03:24</span>-->
+<!--                                <div class="messageText">-->
+<!--                                    <img th:src="@{/pic/userIcon/{img}(img=${userInfo.img})}">-->
+<!--                                    <div class="msg2">1324</div>-->
+<!--                                </div>-->
+<!--                            </li>-->
+                        </ul>
+                    </div>
+                    <div id="edit" class="content-edit" style="display:none;">
+                        <textarea id="message"></textarea>
+                    </div>
+                    <div id="footer" class="content-footer" style="display:none;">
+                        <button type="button" id="submit" class="layui-btn layui-btn-xs layui-btn-primary" style="margin-left: 10px;">发送</button>
+                        <button type="button" id="reset" class="layui-btn layui-btn-xs layui-btn-primary">重置</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div th:replace="front-common::footer"></div>
+    </div>
+
+</div>
+<script th:inline="javascript">
+    var toUser ;
+    var chatList ;
+
+    $(function () {
+        initChatList();
+
+        var ws = new WebSocket("ws://localhost:8080/message");
+
+        ws.onopen = function (ev) {
+            layer.msg("成功进入私信",{icon:'6'});
+        }
+
+        //接受消息
+        //ev:{fromUserId: "xxx", content: "...", sendTime: "xxx" }
+        ws.onmessage = function (ev) {
+            var res = JSON.parse(ev.data);
+
+            if (toUser!==undefined && toUser.id === res.fromUserId) {
+                var str = '<li class="msg-item">' +
+                          '    <span class="timeText">'+res.sendTime+'</span>\n' +
+                          '    <div class="messageText">'+
+                          '        <img src="'+[[@{/pic/userIcon/}]]+toUser.img+'">' +
+                          '        <code class="msg1">'+res.content+'</code>' +
+                          '    </div>' +
+                          '</li>';
+                $("#message-content").append(str);
+                var div = document.getElementById('messageContent');
+                div.scrollTop = div.scrollHeight;
+            }else{
+                let chat = chatList.find(chat => {
+                    return chat.toUserId === res.fromUserId;
+                });
+                if(chat !== undefined){
+                    $("#unread-"+res.fromUserId).attr("class","layui-badge");
+                    var unread = $("#unread-"+res.fromUserId).text()===''?1:$("#unread-"+res.fromUserId).text()*1+1;
+                    $("#unread-"+res.fromUserId).text(unread);
+                }else {
+                    initChatList();
+                }
+            }
+            $("#latestMessage-"+res.fromUserId).text(res.content);
+            $("#sendTime-"+res.fromUserId).text(res.sendTime);
+        }
+
+        ws.onclose = function (ev) {
+            layer.msg("网络中断，已断开连接，请刷新页面重试",{icon:'5'});
+        }
+
+        $("#submit").click(function () {
+            //获取输入的内容
+            var data = $("#message").val();
+            if($.trim(data)===''){
+                layer.msg("请输入文字")
+                return false;
+            }
+            $("#message").val("");
+
+            // var reResumeHtml = /^(http:\/\/localhost:8080\/resume\/detail\/){1}\w{32}$/;
+            var reResumeHtml = /^http:\/\/localhost:8080\/resume\/detail\/\w{32}$/;
+            var content = '';
+            if(!(reResumeHtml.test(data))){
+                 content = data
+                    .replace(/&/g, '&amp;')
+                    .replace(/ /g, '&nbsp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;')
+                    .replace(/\r{0,}\n/g, '<br/>');
+            }else {
+                content = "<a target='_blank' href='"+data+"'>"+data+"</a>"
+            }
+            console.log((reResumeHtml.test(data)));
+
+            var json = {"fromUserId": [[${userInfo.id}]] , "toUserId": toUser.id, "content": content};
+            var current = getTime();
+            //将数据展示在聊天区
+            var str = '<li class="msg-item">' +
+                    '    <span class="timeText">'+current+'</span>\n' +
+                    '    <div class="messageText">'+
+                    '        <img src="'+[[@{/pic/userIcon/{img}(img=${userInfo.img})}]]+'">' +
+                    '        <pre style="font-family: arial" class="msg2">'+content+'</pre>' +
+                    '    </div>' +
+                    '</li>';
+            $("#message-content").append(str);
+            var div = document.getElementById('messageContent');
+            div.scrollTop = div.scrollHeight;
+
+            $("#latestMessage-"+toUser.id).text(data);
+            $("#sendTime-"+toUser.id).text(current);
+
+            //发送数据
+            ws.send(JSON.stringify(json));
+        })
+
+        $("#chatList").on("click","li",function (){
+            chat($(this)[0].id);
+        })
+
+    });
+
+    function chat(id){
+        $("#message-content").html('');
+        $("#unread-"+id).attr("class","");
+        $("#unread-"+id).text('');
+        $("#footer").css("display",'');
+        $("#edit").css("display",'');
+        var html = '';
+        $.ajax({
+            url: '/message/chat/'+id,
+            type:'get',
+            success:function (data) {
+                toUser = data.data.toUser;
+                $("#userName").html(data.data.toUser.username);
+                $.each(data.data.chatMessageList,function (i,n){
+                    var img = [[${userInfo.img}]];
+                    var clazz = 'msg2';
+                    if(n.fromUserId===id){
+                        clazz = 'msg1';
+                        img = data.data.toUser.img;
+                    }
+                    html+= '<li class="msg-item">' +
+                        '    <span class="timeText">'+n.sendTime+'</span>\n' +
+                        '    <div class="messageText">'+
+                        '        <img src="'+[[@{/pic/userIcon/}]]+img+'">' +
+                        '        <div class="'+clazz+'">'+n.content+'</div>' +
+                        '    </div>' +
+                        '</li>';
+                });
+                $("#message-content").html(html);
+            },
+            error: function(data){
+                layer.msg("系统错误，聊天记录加载失败",{icon:'5'});
+            },
+            async:false
+        });
+        var div = document.getElementById('messageContent');
+        div.scrollTop = div.scrollHeight;
+    }
+
+    function initChatList(){
+        $.ajax({
+            url: '/message/getChatListVoList',
+            type:'get',
+            success:function (data) {
+                chatList = data.data.chatListVos;
+                $("#chatList").html("");
+                var chatListHtml = '';
+                $.each(data.data.chatListVos,function (i,n){
+                    chatListHtml+=  '<li id="'+n.toUserId+'" name="chat">' +
+                                    '    <div class="chat-box">' +
+                                    '        <img src="'+[[@{/pic/userIcon/}]]+n.toUserImg+'">' +
+                                    '        <div style="max-width: 55%;width: 55%;">' +
+                                    '            <span>'+n.toUserName+'</span><br/>' +
+                                    '            <span id="latestMessage-'+n.toUserId+'" class="latestMessage">'+n.content+'</span>\n' +
+                                    '        </div>' +
+                                    '        <span id="unread-'+n.toUserId+'"></span>' +
+                                    '        <span id="sendTime-'+n.toUserId+'" class="lastedTime">'+n.sendTime+'</span>' +
+                                    '    </div>' +
+                                    '</li>';
+                });
+                $("#chatList").append(chatListHtml);
+                $.each(data.data.unread,function (i,n){
+                    if(n.unread>0){
+                        $("#unread-"+n.id).attr("class","layui-badge");
+                        $("#unread-"+n.id).text(n.unread);
+                    }
+                });
+            },
+            error: function(data){
+                layer.msg("系统错误，聊天列表加载失败",{icon:'5'});
+            },
+            async:false
+        });
+    }
+
+    function getTime(){
+        var date = new Date();
+        var seperator1 = "-";
+        var seperator2 = ":";
+        var month = date.getMonth() + 1;
+        var strDate = date.getDate();
+        var second = date.getSeconds();
+        if (month >= 1 && month <= 9) {
+            month = "0" + month;
+        }
+        if (strDate >= 0 && strDate <= 9) {
+            strDate = "0" + strDate;
+        }
+        if (second >= 0 && second <= 9) {
+            second = "0" + second;
+        }
+        var currentdate = date.getFullYear() + seperator1 + month +     seperator1 + strDate + " " + date.getHours() + seperator2 + date.getMinutes()+ seperator2 + second;
+        return currentdate;
+    }
+
+</script>
+</body>
+
+</html>

@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head th:replace="front-common :: commonCss(~{::title},~{},~{},~{::style})">
+    <title>员工管理</title>
+    <style type="text/css">
+        .container{
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            border: #f8f8f8 30px solid;
+            padding: 0;
+        }
+        .content{
+            background-color: #ffffff;
+            float: right;
+            min-height: 75vh;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class="layui-layout layui-layout-admin">
+
+    <div th:replace="front-common::header('information')"></div>
+
+    <div class="layui-layout-body" style="margin-top: 50px;background-color: #f8f8f8;">
+        <div class="layui-container container">
+            <div th:replace="front-common::manageSide('staff')"></div>
+            <div class="content">
+                <div class="layui-fluid">
+                    <fieldset class="layui-elem-field layui-field-title" style="margin-top: 50px;">
+                        <legend>员工管理</legend>
+                    </fieldset>
+                    <div class="layui-card">
+                        <div class="layui-form layui-card-header" style="padding: 15px">
+                            <div class="layui-form-item">
+                                <div class="layui-inline" style="width:150px;">
+                                    <input class="layui-input" id="search-name" autocomplete="off" placeholder="员工姓名">
+                                </div>
+                                <div class="layui-inline" style="width:150px;">
+                                    <select id="search-sex" lay-search>
+                                        <option value="">请选择性别</option>
+                                        <option th:each="sex,stat:${application.sexList}"
+                                                th:text="${sex.value}"
+                                                th:value="${sex.value}"></option>
+                                    </select>
+                                </div>
+                                <div class="layui-inline" style="width:150px;">
+                                    <input class="layui-input" id="search-age" autocomplete="off" placeholder="年龄">
+                                </div>
+                                <div class="layui-inline" style="width:150px;">
+                                    <input class="layui-input" id="search-position" autocomplete="off" placeholder="职位">
+                                </div>
+                                <div class="layui-inline">
+                                    <button class="layui-btn" id="searchBtn">
+                                        <i class="layui-icon layui-icon-search layuiadmin-button-btn"></i> 搜索
+                                    </button>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="layui-card-body">
+                            <div style="padding-bottom:10px;">
+                                <table class="layui-hide" id="staffTable" lay-skin="line" lay-filter="staffTable">
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div th:replace="front-common::footer"></div>
+    </div>
+
+</div>
+<script type="text/html" id="toolbar">
+    <div class="layui-btn-container">
+        <button lay-event="deletes" class="layui-btn layui-btn-danger">取消关联选中员工</button>
+        <button lay-event="save" class="layui-btn layui-btn-normal">关联新员工</button>
+    </div>
+</script>
+<script type="text/html" id="bar">
+    <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="delete">取消关联</a>
+</script>
+<script th:inline="javascript">
+    layui.use(['table','form'], function() {
+        var table = layui.table;
+        var form = layui.form;
+        var $ = layui.jquery;
+
+        var tableIns = table.render({
+            elem: '#staffTable'
+            , url: '/hr/getByConditionInCompany/'+[[${hrInfo.companyId}]]
+            , toolbar: '#toolbar'
+            , where: {
+                "name": $('#search-name').val(),
+                "sex": $('#search-sex').val(),
+                "age": $('#search-age').val(),
+                "position": $('#search-position').val()
+            }
+            , defaultToolbar: []
+            , page: true
+            , limits: [5, 10, 20]
+            , limit: 10
+            , width: 880
+            , cols: [
+                [
+                    {type: 'checkbox', fixed: 'left'}
+                    , {field: 'id', title: 'ID', hide: true}
+                    , {field: 'name', title: '姓名'}
+                    , {field: 'sex', title: '性别'}
+                    , {field: 'age', title: '年龄'}
+                    , {field: 'position', title: '职位'}
+                    , {title: '操作', fixed: 'right', toolbar: '#bar'}
+                ]
+            ]
+        });
+
+        $("#searchBtn").click(function (){
+            tableIns.reload( {
+                where: {
+                    "name": $('#search-name').val(),
+                    "sex": $('#search-sex').val(),
+                    "age": $('#search-age').val(),
+                    "position": $('#search-position').val()
+                }
+                ,page: {
+                    curr: 1
+                }
+            });
+        })
+
+        var rePhone = /^(13\d|14[579]|15[^4\D]|17[^49\D]|18\d)\d{8}$/;
+        var reEmail = /^\w[-\w.+]*@([A-Za-z0-9][-A-Za-z0-9]+\.)+[A-Za-z]{2,14}$/;
+        var reNumber = /^[0-9]\d*$/;
+
+        table.on('tool(staffTable)', function(obj){
+            var data = obj.data;
+            switch(obj.event){
+                case 'delete':
+                    layer.confirm('真的删除么', function(index){
+                        $.ajax({
+                            url: '/hr/unbind/'+data.id,
+                            async:false,
+                            type:"post",
+                            dataType:"json",
+                            success:function (n){
+                                if(n.success){
+                                    $("#searchBtn").click();
+                                }else {
+                                    layer.msg("取消关联失败,"+n.msg);
+                                }
+                            },
+                            error:function (n){
+                                layer.msg("取消关联失败,"+n.responseJSON.msg);
+                            }
+                        });
+                        layer.close(index);
+                    });
+                    break;
+                case 'edit':
+                    layer.open({
+                        type: 1,
+                        area: ['600px', '380px'],
+                        shadeClose: true, //点击遮罩关闭
+                        title: '修改员工信息',
+                        btn: ['确定', '取消'],
+                        content: $('#editHrFrame'),
+                        success: function (index, layero){
+                            console.log(data);
+                            form.val("hrInfoForm", {
+                                "name": data.name
+                                , "sex": data.sex
+                                , "age": data.age
+                                , "position": data.position
+                            });
+                        },
+                        yes: function (index, layero){
+                            var name = $.trim($("#edit-name").val());
+                            var sex = $.trim($("#edit-sex").val());
+                            var age = $.trim($("#edit-age").val());
+                            var position = $.trim($("#edit-position").val());
+                            if(name===''){
+                                layer.msg("请输入员工名",{icon:'5'});
+                                return false;
+                            }
+                            if(sex===''){
+                                layer.msg("请选择性别",{icon:'5'});
+                                return false;
+                            }
+                            if(position===''){
+                                layer.msg("请输入相应职位",{icon:'5'});
+                                return false;
+                            }
+                            if(!(reNumber.test(age))){
+                                layer.msg("请输入正确的年龄",{icon:'5'});
+                                return false;
+                            }
+
+                            var formFile = new FormData(document.getElementById('hrInfoForm'));
+                            $.ajax({
+                                url : [[@{/hr/update/}]]+data.id,
+                                type : 'post',
+                                dataType : 'json',
+                                data : formFile,
+                                contentType:false,
+                                processData:false,
+                                success : function(n) {
+                                    if (n.success) {
+                                        layer.msg("更新员工信息成功");
+                                        $("#searchBtn").click();
+                                        layer.close(index);
+                                    }else {
+                                        layer.msg("更新员工信息失败,"+n.msg);
+                                    }
+                                },
+                                error:function (n){
+                                    layer.msg("更新员工信息失败,"+n.responseJSON.msg);
+                                }
+                            });
+                        },
+                        end: function (res) {
+                            $("#editHrFrame").css("display",'none');
+                        }
+                    });
+                    break;
+            };
+        });
+
+        table.on('toolbar(staffTable)', function(obj){
+            var checkStatus = table.checkStatus(obj.config.id);
+            switch(obj.event){
+                case 'deletes':
+                    var data = checkStatus.data;
+                    var size = data.length;
+                    console.log(data);
+                    if(size != 0){
+                        layer.confirm('真的删除么', function(index){
+                            for(let i = 0; i < size; i++){
+                                $.ajax({
+                                    url: '/hr/unbind/'+data[i].id,
+                                    async:false,
+                                    type:"post",
+                                    dataType:"json",
+                                    success:function (n){
+                                        if(!n.success){
+                                            layer.msg("取消关联失败,"+n.msg);
+                                        }
+                                    },
+                                    error:function (n){
+                                        layer.msg("取消关联失败,"+n.responseJSON.msg);
+                                    }
+                                });
+                            }
+                            layer.close(index);
+                            $("#searchBtn").click();
+                        });
+                    }else {
+                        layer.msg("请勾选要取消关联的员工");
+                    }
+                    break;
+                case 'save':
+                    layer.open({
+                        type: 1,
+                        area: ['500px', '350px'],
+                        shadeClose: true,
+                        title: '关联新员工',
+                        btn: ['确定', '取消'],
+                        content: $('#saveHrFrame'),
+                        yes: function (index, layero){
+                            var username = $.trim($("#save-username").val());
+                            var phone = $.trim($("#save-phone").val());
+                            var position = $.trim($("#save-position").val());
+                            if(username===''){
+                                layer.msg("请输入用户名",{icon:'5'});
+                                return false;
+                            }
+                            if(position===''){
+                                layer.msg("请输入该员工职位",{icon:'5'});
+                                return false;
+                            }
+                            if(!(rePhone.test(phone))){
+                                layer.msg("请输入正确的手机号",{icon:'5'});
+                                return false;
+                            }
+
+                            $.ajax({
+                                url : [[@{/hr/bind/{companyId}(companyId=${hrInfo.companyId})}]],
+                                type : 'post',
+                                dataType : 'json',
+                                data : {
+                                    username: username,
+                                    phone: phone,
+                                    position: position
+                                },
+                                success : function(n) {
+                                    if (n.success) {
+                                        layer.msg("关联成功");
+                                        $("#searchBtn").click();
+                                        layer.close(index);
+                                    }else {
+                                        layer.msg("关联失败,"+n.msg);
+                                    }
+                                },
+                                error:function (n){
+                                    layer.msg("关联失败,"+n.responseJSON.msg);
+                                }
+                            });
+                        },
+                        end: function (res) {
+                            $("#saveHrFrame").css("display",'none');
+                        }
+                    });
+                    break;
+            };
+        });
+    })
+
+</script>
+</body>
+<div style="display:none;" id="saveHrFrame">
+    <form class="layui-form layui-form-pane" style="padding: 30px;">
+        <div class="layui-form-item">
+            <label class="layui-form-label">用户名</label>
+            <div class="layui-input-block">
+                <input class="layui-input" id="save-username" autocomplete="off"  placeholder="请输入所关联员工账号的用户名">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">职位</label>
+            <div class="layui-input-block">
+                <input class="layui-input" id="save-position" autocomplete="off"  placeholder="请输入所关联员工的职位">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">手机号</label>
+            <div class="layui-input-block">
+                <input class="layui-input" id="save-phone" autocomplete="off"  placeholder="验证对方的手机号">
+            </div>
+        </div>
+
+    </form>
+</div>
+<div style="display:none;" id="editHrFrame">
+    <form class="layui-form layui-form-pane" id="hrInfoForm" lay-filter="hrInfoForm" style="padding: 30px;">
+        <div class="layui-form-item">
+            <label class="layui-form-label">姓名</label>
+            <div class="layui-input-block">
+                <input name="name" id="edit-name" type="text" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">性别</label>
+            <div class="layui-input-block">
+                <select id="edit-sex" name="sex">
+                    <option th:each="sex,stat:${application.sexList}"
+                            th:text="${sex.value}"
+                            th:value="${sex.value}" >
+                    </option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">年龄</label>
+            <div class="layui-input-block">
+                <input name="age" id="edit-age" type="text" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">职位</label>
+            <div class="layui-input-block">
+                <input name="position" id="edit-position" type="text" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+    </form>
+</div>
+</html>

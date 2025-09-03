@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head th:replace="front-common :: commonCss(~{::title},~{},~{},~{::style})">
+    <title>个人信息</title>
+    <style type="text/css">
+        .container{
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            border: #f8f8f8 30px solid;
+            padding: 0;
+        }
+        .content{
+            background-color: #ffffff;
+            float: right;
+            min-height: 75vh;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class="layui-layout layui-layout-admin">
+
+    <div th:replace="front-common::header('information')"></div>
+
+    <div class="layui-layout-body" style="margin-top: 50px;background-color: #f8f8f8;">
+        <div class="layui-container container">
+            <div th:replace="front-common::infoSide('information')"></div>
+            <div class="content">
+                <div class="layui-fluid" >
+                    <fieldset class="layui-elem-field layui-field-title" style="margin-top: 50px;">
+                        <legend>个人信息</legend>
+                    </fieldset>
+                    <form id="userInfoForm" class="layui-form layui-form-pane" lay-filter="userInfoForm" style="padding: 0 60px 0 60px;">
+                        <div class="layui-form-item" style="display: flex;flex-direction: column;align-items: center;justify-content: flex-start;">
+                            <img id="showImg" th:src="@{/pic/userIcon/{img}(img=${userInfo.img})}"
+                                 class="layui-nav-img" style="width: 120px;height: 120px;margin-right: 0;margin-bottom: 5px;">
+                            <button class="layui-btn" type='button' value='' onclick='javascript:$("#img").click();'>上传头像</button>
+                            <input id="showImgName" type='text' readonly style="border: none;"/>
+                            <input name="imgFile" id="img" placeholder="修改头像" type="file"
+                                   accept="image/jpeg, image/png" maxFileCount=1 style="display:none" onchange='onHiddenFile();'/>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">用户名</label>
+                            <div class="layui-input-block">
+                                <input name="username" type="text" disabled class="layui-input">
+                            </div>
+
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">手机号码</label>
+                            <div class="layui-input-block">
+                                <input name="phone" lay-verify="phone"  type="text" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">电子邮箱</label>
+                            <div class="layui-input-block">
+                                <input name="email" lay-verify="email" type="text" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">注册时间</label>
+                            <div class="layui-input-block">
+                                <input name="createTime" type="text" disabled class="layui-input">
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <div class="layui-input-block">
+                                <button type="submit" lay-submit lay-filter="submit" class="layui-btn">立即提交</button>
+                                <button type="button" id="resetBtn" class="layui-btn layui-btn-primary">重置</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div th:replace="front-common::footer"></div>
+    </div>
+
+</div>
+<script th:inline="javascript">
+    layui.use(['form'], function() {
+        var form = layui.form;
+        var $ = layui.jquery;
+
+
+        form.val("userInfoForm", {
+            "username": [[${userInfo.username}]]
+            , "phone": [[${userInfo.phone}]]
+            , "email": [[${userInfo.email}]]
+            , "createTime": [[${userInfo.createTime}]]
+        });
+
+        form.on('submit(submit)', function (data) {
+            var formFile = new FormData(document.getElementById('userInfoForm'));
+            $.ajax({
+                url: '/user/update',
+                type: 'post',
+                dataType: 'json',
+                data: formFile,
+                cache: false,
+                processData: false,
+                contentType:false,
+                success: function (data){
+                    if(data.success){
+                        layer.msg("修改成功");
+                    }else {
+                        layer.msg("修改失败，请稍后再试（"+data.msg+")");
+                    }
+                },
+                error: function (data){
+                    layer.msg("修改失败,"+data.responseJSON.msg);
+                }
+            });
+            return false;
+        });
+
+        $("#resetBtn").click(function (){
+            form.val("userInfoForm", { //formTest 即 class="layui-form" 所在元素属性 lay-filter="" 对应的值
+                "username": [[${userInfo.username}]]
+                , "phone": [[${userInfo.phone}]]
+                , "email": [[${userInfo.email}]]
+                , "createTime": [[${userInfo.createTime}]]
+            });
+        })
+
+        $("#img").change(function (){
+            if(this.files.length){
+                let file = this.files[0];
+                let reader = new FileReader();
+                reader.onload = function(){
+                    $("#showImg").attr("src",this.result);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+    })
+
+    function onHiddenFile() {
+        var dd = $("#img").val().split("\\");
+        $("#showImgName").val(dd[dd.length - 1]);
+    }
+</script>
+</body>
+
+</html>

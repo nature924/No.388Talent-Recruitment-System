@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iurac.recruit.mapper.JobMapper">
+
+    <select id="getJobsByConditionInPage" resultType="com.iurac.recruit.vo.JobVo">
+        select j.id,j.job,j.business,j.education,j.experience,j.salary,j.area,j.create_time,
+               h.id as hrId,h.name as hrName,h.position as hrPosition, c.id as companyId, c.name as companyName
+        from t_job j
+        left join t_hr h on j.create_hr_id=h.id
+        left join t_company c on j.company_id=c.id
+        <where>
+            <if test="jobName!=null and jobName!=''">
+                ( j.job like concat('%',#{jobName},'%') or j.description like concat('%',#{jobName},'%')     )
+            </if>
+            <if test="business!='' and business!=null">
+                and j.business like concat('%',#{business},'%')
+            </if>
+            <if test="education!='' and education!=null">
+                and j.education = #{education}
+            </if>
+            <if test="experience!='' and experience!=null">
+                and j.experience = #{experience}
+            </if>
+            <if test="city!='' and city!=null">
+                and j.area like concat('%',#{city},'%')
+            </if>
+            <if test="startCreateTime!='' and startCreateTime!=null">
+                and j.create_time > #{startCreateTime}
+            </if>
+        </where>
+        order by j.create_time asc
+        limit #{skipCount},12
+    </select>
+
+
+    <select id="getNumOfJobInBusiness" resultType="java.util.Map">
+        select business as name, count(*) as value from t_job group by business
+    </select>
+
+    <select id="getNumOfJobInArea" resultType="java.util.Map">
+        select area as name, count(*) as value from t_job group by area
+    </select>
+    <select id="getByCondition" resultType="com.iurac.recruit.entity.Job">
+        select j.*,h.name as create_hr_name, c.name as companyName
+        from t_job j
+        left join t_hr h on j.create_hr_id=h.id
+        left join t_company c on j.company_id=c.id
+        <where>
+            <if test="job!='' and job!=null">
+                and j.job like concat('%',#{job},'%')
+            </if>
+            <if test="education!='' and education!=null">
+                and j.education like concat('%',#{education},'%')
+            </if>
+            <if test="area!='' and area!=null">
+                and j.area like concat('%',#{area},'%')
+            </if>
+            <if test="business!='' and business!=null">
+                and j.business like concat('%',#{business},'%')
+            </if>
+            <if test="startDate!='' and startDate!=null">
+                and j.create_time &gt;= #{startDate}
+            </if>
+            <if test="endDate!='' and endDate!=null">
+                and j.create_time &lt;= #{endDate}
+            </if>
+        </where>
+        order by j.create_time desc
+        limit #{skipCount},#{limit}
+    </select>
+    <select id="getCountByCondition" resultType="java.lang.Long">
+        select count(*)
+        from t_job j
+        left join t_hr h on j.create_hr_id=h.id
+        left join t_company c on j.company_id=c.id
+        <where>
+            <if test="job!='' and job!=null">
+                and j.education like concat('%',#{job},'%')
+            </if>
+            <if test="education!='' and education!=null">
+                and j.education like concat('%',#{education},'%')
+            </if>
+            <if test="area!='' and area!=null">
+                and j.area like concat('%',#{area},'%')
+            </if>
+            <if test="business!='' and business!=null">
+                and j.area like concat('%',#{business},'%')
+            </if>
+            <if test="startDate!='' and startDate!=null">
+                and j.create_time &gt;= #{startDate}
+            </if>
+            <if test="endDate!='' and endDate!=null">
+                and j.create_time &lt;= #{endDate}
+            </if>
+        </where>
+    </select>
+
+</mapper>

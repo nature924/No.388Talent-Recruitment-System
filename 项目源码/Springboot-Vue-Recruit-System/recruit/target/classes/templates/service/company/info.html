@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head th:replace="front-common :: commonCss(~{::title},~{},~{},~{::style})">
+    <title>公司简介</title>
+    <style type="text/css">
+        .container{
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            border: #f8f8f8 30px solid;
+            padding: 0;
+        }
+        .content{
+            background-color: #ffffff;
+            float: right;
+            min-height: 75vh;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class="layui-layout layui-layout-admin">
+
+    <div th:replace="front-common::header('information')"></div>
+
+    <div class="layui-layout-body" style="margin-top: 50px;background-color: #f8f8f8;">
+        <div class="layui-container container">
+            <div th:replace="front-common::manageSide('info')"></div>
+            <div class="content">
+                <div class="layui-fluid" >
+                    <fieldset class="layui-elem-field layui-field-title" style="margin-top: 50px;">
+                        <legend>公司简介</legend>
+                    </fieldset>
+                    <form class="layui-form layui-form-pane" lay-filter="companyInfoForm" style="padding: 0 60px 0 60px;">
+                        <div class="layui-form-item" style="display: flex;flex-direction: column;align-items: center;justify-content: flex-start;">
+                            <img th:src="@{/pic/companyIcon/{img}(img=${companyInfo.img})}"
+                                 class="layui-nav-img" style="width: 120px;height: 120px;margin-right: 0;margin-bottom: 5px;">
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">公司名</label>
+                            <div class="layui-input-block">
+                                <input name="name" type="text" disabled class="layui-input">
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">公司简介</label>
+                            <div class="layui-input-block">
+                                <textarea name="introduction" disabled placeholder="请输入内容" autocomplete="off" class="layui-textarea" ></textarea>
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">注册时间</label>
+                            <div class="layui-input-block">
+                                <input name="registrationTime" type="text" disabled class="layui-input">
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">融资状态</label>
+                            <div class="layui-input-block">
+                                <input name="listedStatus" type="text" disabled autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">公司规模</label>
+                            <div class="layui-input-block">
+                                <input name="size" type="text" disabled autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div th:replace="front-common::footer"></div>
+    </div>
+
+</div>
+<script th:inline="javascript">
+    layui.use(['form','laydate'], function(){
+        var form = layui.form;
+        var laydate = layui.laydate;
+        var $ = layui.jquery;
+
+        form.val("companyInfoForm", {
+            "name": [[${companyInfo==null?'':companyInfo.name}]]
+            ,"introduction": [[${companyInfo==null?'':companyInfo.introduction}]]
+            ,"listedStatus": [[${companyInfo==null?'':companyInfo.listedStatus}]]
+            ,"size": [[${companyInfo==null?'':companyInfo.size}]]
+            ,"registrationTime": [[${companyInfo==null?'':companyInfo.registrationTime}]]
+        });
+
+    })
+
+</script>
+</body>
+
+</html>

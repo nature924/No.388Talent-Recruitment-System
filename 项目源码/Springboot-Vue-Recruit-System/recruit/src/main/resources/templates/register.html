@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="front-common :: commonCss(~{::title},~{},~{},~{::style})">
+    <title>注册</title>
+    <style type="text/css">
+        * {
+            margin: 0;
+            padding: 0;
+        }
+        .frame{
+            background-color: #f4f4f4;
+            margin-top: 80px;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: darkgrey 5px 5px 20px 5px ;//边框阴影
+        }
+        .layui-elip {
+            font-size: 24px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="layui-container">
+    <div class="layui-row">
+        <div class="layui-col-md4 layui-col-md-offset4 frame">
+            <header class="layui-elip">注册</header>
+            <form class="layui-form layui-form-pane layui-row layui-col-space30">
+                <div class="layui-col-md12">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">用户名</label>
+                        <div class="layui-input-block">
+                            <input type="text" id="username" class="layui-input" placeholder="请输入账号" autocomplete="off" >
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">密码</label>
+                        <div class="layui-input-block">
+                            <input type="password" id="password" class="layui-input" placeholder="请输入密码" autocomplete="off" >
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">确认密码</label>
+                        <div class="layui-input-block">
+                            <input type="password" id="confPassword" class="layui-input" placeholder="请再次输入密码" autocomplete="off" >
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">身份</label>
+                        <div class="layui-input-block">
+                            <input type="radio" name="role" value="0fe33840c6d84bf78df55d49b1134245" title="找工作" checked>
+                            <input type="radio" name="role" value="0fe33840c6d84bf78df55d49b1611234" title="招人才" >
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-col-md12" style="display: flex;align-items: center;justify-content: center;">
+                    <button type="button" class="layui-btn" id="registerBtn" value="确认">确认</button>
+                    <button type="reset" class="layui-btn layui-btn-normal" value="重置">重置</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    layui.use('util', function(){
+        var util = layui.util;
+        //固定块
+        util.fixbar({
+            bar1: '&#xe65c;'
+            ,css: {right: 50, bottom: 100}
+            ,bgcolor: '#393D49'
+            ,click: function(type){
+                if(type === 'bar1'){
+                    location.href='/index';
+                }
+            }
+        });
+    });
+
+    $(function (){
+        $("#account").focus();
+
+        $(window).keydown(function (event){
+            if(event.keyCode === 13){
+                register();
+            }
+        })
+
+        $("#registerBtn").click(function (){
+            register();
+        });
+    });
+    function register(){
+        var username = $.trim($("#username").val());
+        var password = $.trim($("#password").val());
+        var confPassword = $.trim($("#confPassword").val());
+        var role = $("input[name='role']:checked").val();
+
+        if(username==='' || password===''){
+            layer.msg("请输入用户名及密码");
+            return false;
+        }
+        if(password !== confPassword){
+            layer.msg("两次密码不一致");
+            return false;
+        }
+
+        $.ajax({
+            url: '/register',
+            type: 'post',
+            dataType: 'json',
+            data: {
+                "username": username,
+                "password": password,
+                "role": role
+            },
+            success: function (data){
+                console.log(data.msg);
+                if(data.success){
+                    layer.alert('注册成功，立即登录！', {
+                        time: 3*1000
+                        ,success: function(layero, index){
+                            var timeNum = this.time/1000, setText = function(start){
+                                layer.title((start ? timeNum : --timeNum) + ' 秒后关闭', index);
+                            };
+                            setText(!0);
+                            this.timer = setInterval(setText, 1000);
+                            if(timeNum <= 0) clearInterval(this.timer);
+                        }
+                        ,end: function(){
+                            clearInterval(this.timer);
+                            location.href='/login';
+                        }
+                    });
+                }else {
+                    layer.msg("注册失败,"+data.msg);
+                }
+            },
+            error: function (data){
+                layer.msg("注册失败,"+data.responseJSON.msg);
+            }
+        })
+    }
+
+</script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iurac.recruit.mapper.UserMapper">
+
+    <select id="findRolesByUsername" resultType="com.iurac.recruit.entity.Role">
+        select r.* from t_user u
+                            left join t_user_role ur on u.id=ur.user_id
+                            left join t_role r on r.id=ur.role_id
+        where u.username=#{username}
+    </select>
+    <select id="getByCondition" resultType="com.iurac.recruit.entity.User">
+        select  distinct u.id,u.username,u.phone,u.email,u.img,u.create_time,u.locked
+        from t_user u
+        left join t_user_role ur on ur.user_id=u.id
+        <where>
+            <if test="username!='' and username!=null">
+                and u.username like concat('%',#{username},'%')
+            </if>
+            <if test="locked!='' and locked!=null">
+                and u.locked = #{locked}
+            </if>
+            <if test="role!='' and role!=null">
+                and ur.role_id = #{role}
+            </if>
+            <if test="startDate!='' and startDate!=null">
+                and u.create_time &gt;= #{startDate}
+            </if>
+            <if test="endDate!='' and endDate!=null">
+                and u.create_time &lt;= #{endDate}
+            </if>
+        </where>
+        order by u.create_time desc
+        limit #{skipCount},#{limit}
+    </select>
+
+    <select id="getCountByCondition" resultType="java.lang.Long">
+        select count(distinct u.id)
+        from t_user u
+        left join t_user_role ur on ur.user_id=u.id
+        <where>
+            <if test="username!='' and username!=null">
+                and u.username like concat('%',#{username},'%')
+            </if>
+            <if test="locked!='' and locked!=null">
+                and u.locked = #{locked}
+            </if>
+            <if test="role!='' and role!=null">
+                and ur.role_id = #{role}
+            </if>
+            <if test="startDate!='' and startDate!=null">
+                and u.create_time &gt;= #{startDate}
+            </if>
+            <if test="endDate!='' and endDate!=null">
+                and u.create_time &lt;= #{endDate}
+            </if>
+        </where>
+    </select>
+</mapper>

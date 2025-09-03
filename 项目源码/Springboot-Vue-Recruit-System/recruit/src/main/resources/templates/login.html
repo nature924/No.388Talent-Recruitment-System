@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="front-common :: commonCss(~{::title},~{},~{},~{::style})">
+    <title>登录</title>
+    <style type="text/css">
+        * {
+            margin: 0;
+            padding: 0;
+        }
+        .frame{
+            background-color: #f4f4f4;
+            margin-top: 80px;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: darkgrey 5px 5px 20px 5px ;
+        }
+        .layui-elip {
+            font-size: 24px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="layui-container">
+    <div class="layui-row">
+        <div class="layui-col-md4 layui-col-md-offset4 frame">
+            <header class="layui-elip">登录</header>
+            <form class="layui-form layui-form-pane layui-row layui-col-space30">
+                <div class="layui-col-md12">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">账号</label>
+                        <div class="layui-input-block">
+                            <input type="text" id="username" class="layui-input" placeholder="请输入账号" autocomplete="off" >
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">密码</label>
+                        <div class="layui-input-block">
+                            <input type="password" id="password" class="layui-input" placeholder="请输入密码" autocomplete="off" >
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">验证码</label>
+                        <div class="layui-input-inline" style="width: 110px;">
+                            <input type="text" id="securityCode" class="layui-input" placeholder="请输入验证码" autocomplete="off" >
+                        </div>
+                        <div class="layui-input-inline" style="width: 100px;">
+                            <img id="securityCodeImg" alt="点击更换" title="点击更换" th:src="@{/kaptcha/render}"/>
+                        </div>
+                    </div>
+                    <div class="layui-col-md12" style="display: flex;align-items: center;justify-content: center;">
+                        <button id="loginBtn" type="button" class="layui-btn" value="登录">登录</button>
+                        <button type="button" class="layui-btn layui-btn-normal" value="注册" onclick="location.href='/register'">注册</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    layui.use('util', function(){
+        var util = layui.util;
+        //固定块
+        util.fixbar({
+            bar1: '&#xe65c;'
+            ,css: {right: 50, bottom: 100}
+            ,bgcolor: '#393D49'
+            ,click: function(type){
+                if(type === 'bar1'){
+                    location.href='/index';
+                }
+            }
+        });
+    });
+
+    $(function (){
+        $("#username").focus();
+
+        $(window).keydown(function (event){
+            if(event.keyCode === 13){
+                login();
+            }
+        })
+
+        $("#loginBtn").click(function (){
+            login();
+        });
+
+        $("#securityCodeImg").bind("click", function () {
+            $(this).hide().attr('src', '/kaptcha/render?' + Math.random()).fadeIn();
+        });
+    });
+    function login(){
+        var username = $.trim($("#username").val());
+        var password = $.trim($("#password").val());
+        var code = $("#securityCode").val();
+
+        if(username==='' || password===''){
+            layer.msg("请输入用户名及密码");
+            return false;
+        }
+
+        if(code===''){
+            layer.msg("请输入验证码");
+            return false;
+        }
+        $.ajax({
+            url: '/login',
+            type: 'post',
+            dataType: 'json',
+            data: {
+                "username": username,
+                "password": password,
+                "code": code
+            },
+            success: function (data){
+                if(data.success){
+                    location.href='index';
+                }else {
+                    $("#securityCodeImg").attr("src",'/kaptcha/render?' + Math.random());
+                    layer.msg("登录失败，"+data.msg);
+                }
+            }
+        })
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head th:replace="front-common :: commonCss(~{::title},~{},~{},~{::style})">
+    <title>岗位管理</title>
+    <style type="text/css">
+        .container{
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            border: #f8f8f8 30px solid;
+            padding: 0;
+        }
+        .content{
+            background-color: #ffffff;
+            float: right;
+            min-height: 75vh;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class="layui-layout layui-layout-admin">
+
+    <div th:replace="front-common::header('information')"></div>
+
+    <div class="layui-layout-body" style="margin-top: 50px;background-color: #f8f8f8;">
+        <div class="layui-container container">
+            <div th:replace="front-common::manageSide('job')"></div>
+            <div class="content">
+                <div class="layui-fluid">
+                    <fieldset class="layui-elem-field layui-field-title" style="margin-top: 50px;">
+                        <legend>岗位管理</legend>
+                    </fieldset>
+                    <div class="layui-card">
+                        <form class="layui-form layui-card-header" lay-filter="jobInfoForm" id="jobInfoForm" style="padding: 15px;height: auto">
+                            <div class="layui-form-item" style="margin-bottom: 0">
+                                <div class="layui-inline">
+                                    <input class="layui-input" id="search-name" autocomplete="off" placeholder="岗位名">
+                                </div>
+                                <div class="layui-inline">
+                                    <div class="layui-form-mid">发布时间</div>
+                                    <div class="layui-input-inline">
+                                        <input type="text" id="search-createTime" placeholder="发布时间" autocomplete="off" class="layui-input">
+                                    </div>
+                                </div>
+                                <div class="layui-inline">
+                                    <div class="layui-form-mid">学历要求</div>
+                                    <div class="layui-input-inline">
+                                        <select id="search-education" lay-search>
+                                            <option value="">请选择学历要求</option>
+                                            <option th:each="education,stat:${application.educationList}"
+                                                    th:text="${education.value}"
+                                                    th:value="${education.value}" >
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="layui-form-item" style="margin-bottom: 0">
+                                <div class="layui-inline" style="margin-right:20px;">
+                                    <div class="layui-form-mid">工作地点</div>
+                                    <div class="layui-input-inline">
+                                        <select lay-search lay-filter="search-province">
+                                            <option value="">请选择工作地点</option>
+                                            <option th:each="province,stat:${application.provinceList}"
+                                                    th:text="${province.province}"
+                                                    th:value="${province.id}"></option>
+                                        </select>
+                                    </div>
+                                    <div class="layui-input-inline">
+                                        <select id="search-city" name="city" lay-search>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <div class="layui-inline" style="margin-right:0">
+                                    <div class="layui-form-mid">岗位类型</div>
+                                    <div class="layui-input-inline">
+                                        <select lay-search lay-filter="search-type">
+                                            <option value="">请选择岗位类型</option>
+                                            <option th:each="type,stat:${application.typeList}"
+                                                    th:text="${type.type}"
+                                                    th:value="${type.id}"></option>
+                                        </select>
+                                    </div>
+                                    <div class="layui-input-inline">
+                                        <select id="search-business" name="business" lay-search>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="layui-inline" style="float: right;">
+                                    <button type="button" class="layui-btn" id="searchBtn">
+                                        <i class="layui-icon layui-icon-search"></i> 搜索
+                                    </button>
+                                </div>
+
+                            </div>
+                        </form>
+
+                        <div class="layui-card-body">
+                            <div style="padding-bottom:10px;">
+                                <table class="layui-hide" id="jobTable" lay-skin="line" lay-filter="jobTable">
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div th:replace="front-common::footer"></div>
+    </div>
+
+</div>
+<script type="text/html" id="toolbar">
+    <div class="layui-btn-container">
+        <button lay-event="deletes" class="layui-btn layui-btn-danger">取消选中岗位发布</button>
+    </div>
+</script>
+<script type="text/html" id="bar">
+    <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="delete">取消发布</a>
+</script>
+<script th:inline="javascript">
+    layui.use(['laydate','table','form'], function() {
+        var laydate = layui.laydate;
+        var form = layui.form;
+        var table = layui.table;
+        var $ = layui.jquery;
+
+        form.on('select(search-province)', function(data){
+            $("#search-city").html("");
+            $.ajax({
+                url: '/dictionary/getCityList/'+data.value,
+                type:"get",
+                dataType:"json",
+                success:function (data){
+                    var html = "";
+                    $.each(data,function (i,n){
+                        html += "<option value='"+n.city+"'>"+n.city+"</option>";
+                    });
+                    $("#search-city").html(html);
+                    form.render(null,"jobInfoForm");
+                }
+            });
+            form.render(null,"jobInfoForm");
+        });
+        form.on('select(search-type)', function(data){
+            $("#search-business").html("");
+            $.ajax({
+                url: '/dictionary/getBusinessList/'+data.value,
+                type:"get",
+                dataType:"json",
+                success:function (data){
+                    var html = "";
+                    $.each(data,function (i,n){
+                        html += "<option value='"+n.business+"'>"+n.business+"</option>";
+                    });
+                    $("#search-business").html(html);
+                    form.render(null,"jobInfoForm");
+                }
+            });
+            form.render(null,"jobInfoForm");
+        });
+        form.on('select(edit-province)', function(data){
+            $("#edit-city").html("");
+            $.ajax({
+                url: '/dictionary/getCityList/'+data.value,
+                type:"get",
+                dataType:"json",
+                success:function (data){
+                    var html = "";
+                    $.each(data,function (i,n){
+                        html += "<option value='"+n.city+"'>"+n.city+"</option>";
+                    });
+                    $("#edit-city").html(html);
+                    form.render(null,"editJobInfoForm");
+                }
+            });
+            form.render(null,"editJobInfoForm");
+        });
+        form.on('select(edit-type)', function(data){
+            $("#edit-business").html("");
+            $.ajax({
+                url: '/dictionary/getBusinessList/'+data.value,
+                type:"get",
+                dataType:"json",
+                success:function (data){
+                    var html = "";
+                    $.each(data,function (i,n){
+                        html += "<option value='"+n.business+"'>"+n.business+"</option>";
+                    });
+                    $("#edit-business").html(html);
+                    form.render(null,"editJobInfoForm");
+                }
+            });
+            form.render(null,"editJobInfoForm");
+        });
+
+        laydate.render({
+            elem: '#search-createTime'
+            ,range: true
+        });
+
+        var tableIns = table.render({
+            elem: '#jobTable'
+            , url: '/job/getByConditionInCompany/' + [[${hrInfo.companyId}]]
+            , toolbar: '#toolbar'
+            , where: {
+                "name": $('#search-name').val(),
+                "education": $('#search-education').val(),
+                "startDate": $("#search-createTime").val().split(" - ")[0],
+                "endDate": $("#search-createTime").val().split(" - ")[1]==null?$("#search-createTime").val().split(" - ")[1]:"",
+                "area": $('#search-city').find("option:selected").text(),
+                "business": $('#search-business').find("option:selected").text()
+            }
+            , defaultToolbar: []
+            , page: true
+            , limits: [5, 10, 20]
+            , limit: 10
+            , width: 880
+            , cols: [
+                [
+                    {type: 'checkbox', fixed: 'left'}
+                    , {field: 'id', title: 'ID', hide: true}
+                    , {field: 'job', width:200, title: '岗位名'}
+                    , {field: 'business', width:125, title: '岗位类型'}
+                    , {field: 'education', width:88, title: '学历要求'}
+                    , {field: 'experience', width:88, title: '工作经验'}
+                    , {field: 'salary', width:88, title: '工资'}
+                    , {field: 'area', width:150, title: '工作地区'}
+                    , {field: 'address', width:150, title: '详细地址'}
+                    , {field: 'description', width:150, title: '描述'}
+                    , {field: 'createTime', width:110, title: '发布时间',sort:true}
+                    , {field: 'createHrId', width:75, title: 'HRid', hide: true}
+                    , {field: 'companyId', width:75, title: '公司id', hide: true}
+                    , {title: '操作', width:150, fixed: 'right',  toolbar: '#bar'}
+                ]
+            ]
+        });
+
+        $("#searchBtn").click(function (){
+            tableIns.reload( {
+                where: {
+                    "name": $('#search-name').val(),
+                    "education": $('#search-education').val(),
+                    "startDate": $("#search-createTime").val().split(" - ")[0],
+                    "endDate": $("#search-createTime").val().split(" - ")[1]!==null?$("#search-createTime").val().split(" - ")[1]:"",
+                    "area": $('#search-city').find("option:selected").text(),
+                    "business": $('#search-business').find("option:selected").text()
+                }
+                ,page: {
+                    curr: 1
+                }
+            });
+        });
+
+        table.on('tool(jobTable)', function(obj){
+            var data = obj.data;
+            switch(obj.event){
+                case 'delete':
+                    layer.confirm('真的取消么', function(index){
+                        $.ajax({
+                            url: '/job/unpublish/'+data.id,
+                            async:false,
+                            type:"post",
+                            dataType:"json",
+                            success:function (n){
+                                if(n.success){
+                                    $("#searchBtn").click();
+                                }else {
+                                    layer.msg("取消发布失败,"+n.msg);
+                                }
+                            },
+                            error:function (n){
+                                layer.msg("取消发布失败,"+n.responseJSON.msg);
+                            }
+                        });
+                        layer.close(index);
+                    });
+                    break;
+                case 'edit':
+                    layer.open({
+                        type: 1,
+                        area: ['800px', '560px'],
+                        shadeClose: true, //点击遮罩关闭
+                        title: '修改岗位信息',
+                        btn: ['确定', '取消'],
+                        content: $('#editJobFrame'),
+                        success: function (index, layero){
+                            form.val("editJobInfoForm", {
+                                "job": data.job
+                                , "salary": data.salary
+                                , "education": data.education
+                                , "age": data.age
+                                , "experience": data.experience
+                                , "address": data.address
+                                , "description": data.description
+                            });
+                            $("#tips-business").text("原先为："+data.business);
+                            $("#tips-area").text("原先为："+data.area);
+                            form.render(null,'editJobInfoForm');
+                        },
+                        yes: function (index, layero){
+                            var job = $.trim($("#edit-job").val());
+                            var salary = $.trim($("#edit-salary").val());
+                            var education = $.trim($("#edit-education").val());
+                            var address = $.trim($("#edit-address").val());
+                            var description = $.trim($("#edit-description").val());
+                            var type = $("#edit-type").find("option:selected").text();
+                            var business = $.trim($("#edit-business").find("option:selected").val());
+                            var province = $("#edit-province").find("option:selected").text();
+                            var city = $.trim($("#edit-city").find("option:selected").text());
+                            if(job==='' ||salary===''||education===''||address===''||description===''||business===''||city===''){
+                                layer.msg("请完善岗位全部信息",{icon:'5'});
+                                return false;
+                            }
+
+                            var formFile = new FormData(document.getElementById('editJobInfoForm'));
+                            formFile.set("business",type+"-"+business);
+                            formFile.append("area",province+"-"+city);
+                            $.ajax({
+                                url : [[@{/job/update/}]]+data.id,
+                                type : 'post',
+                                dataType : 'json',
+                                data : formFile,
+                                contentType:false,
+                                processData:false,
+                                success : function(n) {
+                                    if (n.success) {
+                                        layer.msg("更新岗位信息成功");
+                                        $("#searchBtn").click();
+                                        layer.close(index);
+                                    }else {
+                                        layer.msg("更新岗位信息失败,"+n.msg);
+                                    }
+                                },
+                                error:function (n){
+                                    layer.msg("更新岗位信息失败,"+n.responseJSON.msg);
+                                }
+                            });
+                        },
+                        end: function (res) {
+                            $("#editJobFrame").css("display",'none');
+                        }
+                    });
+                    break;
+            };
+        });
+
+        table.on('toolbar(jobTable)', function(obj){
+            var checkStatus = table.checkStatus(obj.config.id);
+            switch(obj.event){
+                case 'deletes':
+                    var data = checkStatus.data;
+                    var size = data.length;
+                    console.log(data);
+                    if(size != 0){
+                        layer.confirm('真的删除么', function(index){
+                            for(let i = 0; i < size; i++){
+                                $.ajax({
+                                    url: '/job/unpublish/'+data[i].id,
+                                    async:false,
+                                    type:"post",
+                                    dataType:"json",
+                                    success:function (n){
+                                    if(!n.success){
+                                        layer.msg("取消发布失败,"+n.msg);
+                                    }
+                                },
+                                error:function (n){
+                                    layer.msg("取消发布失败,"+n.responseJSON.msg);
+                                }
+                            });
+                            }
+                            layer.close(index);
+                            $("#searchBtn").click();
+                        });
+                    }else {
+                        layer.msg("请勾选要取消发布的岗位");
+                    }
+                    break;
+            };
+        });
+
+    })
+
+</script>
+</body>
+<div style="display:none;" id="editJobFrame">
+    <form class="layui-form layui-form-pane" id="editJobInfoForm" lay-filter="editJobInfoForm" style="padding: 30px;">
+        <div class="layui-form-item">
+            <label class="layui-form-label">岗位名</label>
+            <div class="layui-input-block">
+                <input name="job" id="edit-job" type="text" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">期望薪资</label>
+            <div class="layui-input-block">
+                <input name="salary" id="edit-salary" type="text" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-inline">
+                <label class="layui-form-label">学历要求</label>
+                <div class="layui-input-inline">
+                    <select name="education" id="edit-education" lay-search>
+                        <option th:each="education,stat:${application.educationList}"
+                                th:text="${education.value}"
+                                th:value="${education.value}" >
+                        </option>
+                    </select>
+                </div>
+                <label class="layui-form-label">工作经验</label>
+                <div class="layui-input-inline">
+                    <select id="edit-experience" name="experience" lay-search>
+                        <option th:each="experience,stat:${application.experienceList}"
+                                th:text="${experience.value}"
+                                th:value="${experience  .value}" >
+                        </option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-inline" style="margin-right:0">
+                <label class="layui-form-label">岗位类型</label>
+                <div class="layui-input-inline">
+                    <select lay-search lay-filter="edit-type" name="type" id="edit-type">
+                        <option value="">请选择岗位类型</option>
+                        <option th:each="type,stat:${application.typeList}"
+                                th:text="${type.type}"
+                                th:value="${type.id}">
+                        </option>
+                    </select>
+                </div>
+                <div class="layui-input-inline">
+                    <select id="edit-business" name="business" lay-search>
+                    </select>
+                </div>
+                <div class="layui-form-mid" id="tips-business"></div>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-inline">
+                <label class="layui-form-label">工作地点</label>
+                <div class="layui-input-inline">
+                    <select lay-search lay-filter="edit-province" name="province" id="edit-province">
+                        <option value="">请选择工作地点</option>
+                        <option th:each="province,stat:${application.provinceList}"
+                                th:text="${province.province}"
+                                th:value="${province.id}">
+                        </option>
+                    </select>
+                </div>
+                <div class="layui-input-inline">
+                    <select id="edit-city" name="city" lay-search>
+                    </select>
+                </div>
+                <div class="layui-form-mid" id="tips-area"></div>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">详细地址</label>
+            <div class="layui-input-block">
+                <input name="address" id="edit-address" type="text" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item layui-form-text">
+            <label class="layui-form-label">描述</label>
+            <div class="layui-input-block">
+                <textarea id="edit-description" name="description" placeholder="请输入内容" autocomplete="off" class="layui-textarea" ></textarea>
+            </div>
+        </div>
+    </form>
+</div>
+</html>

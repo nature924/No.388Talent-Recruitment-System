@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head th:replace="admin/end-common::commonCss(~{::title},~{},~{::script},~{::style})">
+    <title>数据字典</title>
+    <style>
+        .body {
+            background-color: #f8f8f8;
+        }
+        .layui-form-select dl { max-height:125px; }
+    </style>
+    <script type="text/html" id="toolbar">
+        <div class="layui-btn-container">
+            <button lay-event="deletes" class="layui-btn layui-btn-danger">删除选中行</button>
+            <button lay-event="save" class="layui-btn layui-btn-normal">新增</button>
+        </div>
+    </script>
+    <script type="text/html" id="bar">
+        <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="delete">删除</a>
+    </script>
+    <script th:inline="javascript">
+        layui.use(['table', 'element', 'form'], function () {
+            var table = layui.table;
+            var element = layui.element;
+            var form = layui.form;
+
+            var tableIns1 = table.render({
+                elem: '#dicTypeTable'
+                , url: '/dictionary/type/get'
+                , toolbar: '#toolbar'
+                , defaultToolbar: []
+                , page: true
+                , limits: [5, 10, 20]
+                , limit: 10
+                , cols: [
+                    [
+                        {type: 'checkbox', fixed: 'left'}
+                        , {field: 'id', title: 'ID', hide: true}
+                        , {field: 'type', title: '类型'}
+                        , {field: 'description', title: '描述'}
+                        , {title: '操作', fixed: 'right', toolbar: '#bar'}
+                    ]
+                ]
+            });
+            table.on('tool(dicTypeTable)', function (obj) {
+                var data = obj.data;
+                switch (obj.event) {
+                    case 'delete':
+                        layer.confirm('真的删除么', function (index) {
+                            $.ajax({
+                                url: '/dictionary/type/delete/'+data.id,
+                                type: "post",
+                                dataType: "json",
+                                success: function (n) {
+                                    if (n.success) {
+                                        tableIns1.reload();
+                                        tableIns2.reload();
+                                    } else {
+                                        layer.msg("删除字典类型失败");
+                                    }
+                                },
+                                error:function (n){
+                                    layer.msg("删除字典类型失败,"+n.responseJSON.msg);
+                                }
+                            });
+                            layer.close(index);
+                        });
+                        break;
+                    case 'edit':
+                        layer.open({
+                            type: 1,
+                            area: ['420', '250px'],
+                            shadeClose: true, //点击遮罩关闭
+                            title: '修改字典类型',
+                            btn: ['确定', '取消'],
+                            content: $("#dicTypeFrame"),
+                            success: function (index, layero) {
+                                $("#type").val(data.type);
+                                $("#description").val(data.description);
+                            },
+                            yes: function (index, layero) {
+                                var type = $("#type").val();
+                                var description = $("#description").val();
+
+                                if (type === '' || description === '') {
+                                    layer.msg("请输入字典类型信息");
+                                    return false;
+                                }
+
+                                $.ajax({
+                                    url: '/dictionary/type/update/'+data.id,
+                                    type: "post",
+                                    data: {
+                                        "type": type,
+                                        "description": description
+                                    },
+                                    dataType: "json",
+                                    success: function (data) {
+                                        if (data.success) {
+                                            layer.msg("修改字典类型" + type + "成功");
+                                        } else {
+                                            layer.msg("修改字典类型" + type + "失败");
+                                        }
+                                        layer.close(index);
+                                        tableIns1.reload();
+                                    },
+                                    error:function (n){
+                                        layer.msg("修改字典类型"+type+"失败,"+n.responseJSON.msg);
+                                    }
+                                });
+                            },
+                            end: function (res) {
+                                $("#dicTypeFrame").css("display", 'none');
+                            }
+                        });
+                        break;
+                };
+            });
+            table.on('toolbar(dicTypeTable)', function (obj) {
+                var checkStatus = table.checkStatus(obj.config.id);
+                switch (obj.event) {
+                    case 'deletes':
+                        var data = checkStatus.data;
+                        var size = data.length;
+                        if (size != 0) {
+                            layer.confirm('真的删除么', function (index) {
+                                for (let i = 0; i < size; i++) {
+                                    $.ajax({
+                                        url: '/dictionary/type/delete/'+data[i].id,
+                                        type: "post",
+                                        dataType: "json",
+                                        async : false,
+                                        success: function (n) {
+                                            if (!n.success) {
+                                                layer.msg("删除字典类型"+data[i].type+"失败");
+                                            }
+                                        },
+                                        error:function (n){
+                                            layer.msg("删除字典类型"+data[i].type+"失败,"+n.responseJSON.msg);
+                                        }
+                                    });
+                                }
+                                layer.close(index);
+                                tableIns1.reload();
+                                tableIns2.reload();
+                            });
+                        } else {
+                            layer.msg("请勾选要删除的字典类型");
+                        }
+                        break;
+                    case 'save':
+                        layer.open({
+                            type: 1,
+                            area: ['420px', '250px'],
+                            shadeClose: true, //点击遮罩关闭
+                            title: '添加字典类型',
+                            btn: ['确定', '取消'],
+                            content: $("#dicTypeFrame"),
+                            success: function (index, layero) {
+                                $("#description").val("");
+                                $("#type").val("");
+                            },
+                            yes: function (index, layero) {
+                                var type = $("#type").val();
+                                var description = $("#description").val();
+
+                                if (type === '' || description === '') {
+                                    layer.msg("请输入字典类型信息");
+                                    return false;
+                                }
+
+                                $.ajax({
+                                    url: '/dictionary/type/save',
+                                    type: "post",
+                                    data: {
+                                        "type": type,
+                                        "description": description
+                                    },
+                                    dataType: "json",
+                                    success: function (data) {
+                                        if (data.success) {
+                                            layer.msg("添加字典类型" + type + "成功");
+                                        } else {
+                                            layer.msg("添加字典类型" + type + "失败");
+                                        }
+                                        layer.close(index);
+                                        tableIns1.reload();
+                                    },
+                                    error: function (n) {
+                                        layer.msg("添加字典类型" + type + "失败," + n.responseJSON.msg);
+                                    }
+                                });
+                            },
+                            end: function (res) {
+                                $("#dicTypeFrame").css("display", 'none');
+                            }
+                        });
+                        break;
+                };
+            });
+
+
+            var reNumber = /^[1-9]\d*$/;
+
+            var tableIns2 = table.render({
+                elem: '#dicValueTable'
+                , url: '/dictionary/value/get'
+                , toolbar: '#toolbar'
+                , defaultToolbar: []
+                , page: true
+                , limits: [5, 10, 20]
+                , limit: 10
+                , cols: [
+                    [
+                        {type: 'checkbox', fixed: 'left'}
+                        , {field: 'id', title: 'ID', hide: true}
+                        , {field: 'value', title: '值'}
+                        , {field: 'orderNo', title: '优先级'}
+                        , {field: 'type', title: '所属类型'}
+                        , {title: '操作', fixed: 'right', toolbar: '#bar'}
+                    ]
+                ]
+            });
+            table.on('tool(dicValueTable)', function (obj) {
+                var data = obj.data;
+                switch (obj.event) {
+                    case 'delete':
+                        layer.confirm('真的删除么', function (index) {
+                            $.ajax({
+                                url: '/dictionary/value/delete/'+data.id,
+                                type: "post",
+                                dataType: "json",
+                                success: function (n) {
+                                    if (n.success) {
+                                        tableIns2.reload();
+                                        reload();
+                                    } else {
+                                        layer.msg("删除字典值失败");
+                                    }
+                                },
+                                error:function (n){
+                                    layer.msg("删除字典值失败,"+n.responseJSON.msg);
+                                }
+                            });
+                            layer.close(index);
+                        });
+                        break;
+                    case 'edit':
+                        layer.open({
+                            type: 1,
+                            area: ['500px', '320px'],
+                            shadeClose: true, //点击遮罩关闭
+                            title: '修改字典值',
+                            btn: ['确定', '取消'],
+                            content: $("#dicValueFrame"),
+                            success: function (index, layero) {
+                                $.ajax({
+                                    url: '/dictionary/type/getAll',
+                                    type: "get",
+                                    dataType: "json",
+                                    async :false,
+                                    success: function (data) {
+                                        var html = '';
+                                        $.each(data,function(i,n){
+                                            html += '<option value="'+n.id+'">'+n.type+'</option>'
+                                        });
+                                        $("#inType").append(html);
+                                    },
+                                    error: function (n) {
+                                        layer.msg("加载数据类型失败");
+                                    }
+                                });
+                                $("#value").val(data.value);
+                                $("#orderNo").val(data.orderNo);
+                                $("#inType").val(data.typeId);
+                                form.render(null,"dicValueForm");
+                            },
+                            yes: function (index, layero) {
+                                var value = $("#value").val();
+                                var orderNo = $("#orderNo").val();
+                                var inType = $("#inType ").val();
+
+                                if (value === '' || orderNo === '') {
+                                    layer.msg("请输入字典值信息");
+                                    return false;
+                                }
+                                if (!(reNumber.test(orderNo))) {
+                                    layer.msg("请输入正确的优先级数字");
+                                    return false;
+                                }
+
+                                $.ajax({
+                                    url: '/dictionary/value/update/'+data.id,
+                                    type: "post",
+                                    data: {
+                                        "value": value,
+                                        "orderNo": orderNo,
+                                        "typeId": inType
+                                    },
+                                    dataType: "json",
+                                    success: function (data) {
+                                        if (data.success) {
+                                            layer.msg("修改字典值" + value + "成功");
+                                            tableIns2.reload();
+                                        } else {
+                                            layer.msg("修改字典值" + value + "失败");
+                                        }
+                                        layer.close(index);
+                                    },
+                                    error: function (n) {
+                                        layer.msg("修改字典值" + value + "失败," + n.responseJSON.msg);
+                                    }
+                                })
+                            },
+                            end: function (res) {
+                                $("#dicValueFrame").css("display", 'none');
+                            }
+                        });
+                        break;
+                }
+                ;
+            });
+            table.on('toolbar(dicValueTable)', function (obj) {
+                var checkStatus = table.checkStatus(obj.config.id);
+                switch (obj.event) {
+                    case 'deletes':
+                        var data = checkStatus.data;
+                        var size = data.length;
+                        if (size != 0) {
+                            layer.confirm('真的删除么', function (index) {
+                                for (let i = 0; i < size; i++) {
+                                    $.ajax({
+                                        url: '/dictionary/value/delete/'+data[i].id,
+                                        type: "post",
+                                        dataType: "json",
+                                        async : false,
+                                        success: function (n) {
+                                            if (!n.success) {
+                                                layer.msg("删除字典值"+data[i].type+"失败");
+                                            }
+                                        },
+                                        error:function (n){
+                                            layer.msg("删除字典值"+data[i].type+"失败,"+n.responseJSON.msg);
+                                        }
+                                    });
+                                }
+                                layer.close(index);
+                                tableIns2.reload();
+                            });
+                        } else {
+                            layer.msg("请勾选要删除的字典值");
+                        }
+                        break;
+                    case 'save':
+                        layer.open({
+                            type: 1,
+                            area: ['420px', '320px'],
+                            shadeClose: true, //点击遮罩关闭
+                            title: '添加字典值',
+                            btn: ['确定', '取消'],
+                            content: $("#dicValueFrame"),
+                            success: function (index, layero) {
+                                $("#value").val("");
+                                $("#orderNo").val("");
+                                $("#inType").val("");
+                                $.ajax({
+                                    url: '/dictionary/type/getAll',
+                                    type: "get",
+                                    dataType: "json",
+                                    async :false,
+                                    success: function (data) {
+                                        var html = '';
+                                        $.each(data,function(i,n){
+                                            html += '<option value="'+n.id+'">'+n.type+'</option>'
+                                        });
+                                        $("#inType").append(html);
+                                    },
+                                    error: function (n) {
+                                        layer.msg("加载数据类型失败");
+                                    }
+                                });
+                                form.render(null,"dicValueForm");
+                            },
+                            yes: function (index, layero) {
+                                var value = $("#value").val();
+                                var orderNo = $("#orderNo").val();
+                                var inType = $("#inType ").val();
+
+                                if (value === '') {
+                                    layer.msg("请输入字典值信息");
+                                    return false;
+                                }
+                                if (!(reNumber.test(orderNo))) {
+                                    layer.msg("请输入正确的优先级数字");
+                                    return false;
+                                }
+
+                                $.ajax({
+                                    url: '/dictionary/value/save',
+                                    type: "post",
+                                    data: {
+                                        "value": value,
+                                        "orderNo": orderNo,
+                                        "typeId": inType
+                                    },
+                                    dataType: "json",
+                                    success: function (data) {
+                                        if (data.success) {
+                                            layer.msg("添加字典值" + value + "成功");
+                                            tableIns2.reload();
+                                        } else {
+                                            layer.msg("添加字典值" + value + "失败");
+                                        }
+                                        layer.close(index);
+                                    },
+                                    error: function (n) {
+                                        layer.msg("添加字典值" + value + "失败," + n.responseJSON.msg);
+                                    }
+                                })
+                            },
+                            end: function (res) {
+                                $("#dicValueFrame").css("display", 'none');
+                            }
+                        });
+                        break;
+                };
+            });
+
+        });
+    </script>
+</head>
+<body>
+<div class="layui-layout layui-layout-admin">
+
+    <div th:replace="admin/end-common::header"></div>
+    <div th:replace="admin/end-common::side('dictionary')"></div>
+
+    <div class="layui-body body">
+        <div class="layui-fluid" style="padding: 15px;">
+            <div class="layui-row layui-col-space15">
+                <div class="layui-col-md6">
+                    <div class="layui-card">
+                        <div class="layui-form layui-card-header" style="padding: 15px;height: auto">
+                            <h2><i class="layui-icon layui-icon-read" style="font-size: 40px;margin-right: 10px;"></i>字典类型
+                            </h2>
+                        </div>
+                        <div class="layui-card-body">
+                            <div style="padding-bottom:10px;">
+                                <table class="layui-hide" id="dicTypeTable" lay-skin="line" lay-filter="dicTypeTable">
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="layui-col-md6">
+                    <div class="layui-card">
+                        <div class="layui-form layui-card-header" style="padding: 15px;height: auto">
+                            <h2><i class="layui-icon layui-icon-read" style="font-size: 40px;margin-right: 10px;"></i>字典值
+                            </h2>
+                        </div>
+
+                        <div class="layui-card-body">
+                            <div style="padding-bottom:10px;">
+                                <table class="layui-hide" id="dicValueTable" lay-skin="line" lay-filter="dicValueTable">
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div th:replace="admin/end-common::footer"></div>
+    </div>
+
+</div>
+<div style="display: none;" id="dicTypeFrame">
+    <form class="layui-form layui-form-pane layui-fluid" style="padding-top: 20px;text-align: center;">
+        <div class="layui-form-item">
+            <div class="layui-inline">
+                <label class="layui-form-label">类型</label>
+                <div class="layui-input-inline">
+                    <input class="layui-input" id="type" autocomplete="off" placeholder="类型（推荐英文）">
+                </div>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-inline">
+                <label class="layui-form-label">描述</label>
+                <div class="layui-input-inline">
+                    <input class="layui-input" id="description" autocomplete="off" placeholder="描述">
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<div style="display: none;" id="dicValueFrame">
+    <form id="dicValueForm" lay-filter="dicValueForm" class="layui-form layui-form-pane layui-fluid" style="padding-top: 20px;text-align: center;">
+        <div class="layui-form-item">
+            <div class="layui-inline">
+                <label class="layui-form-label">所属类型</label>
+                <div class="layui-input-inline">
+                    <select id="inType" placeholder="请选择所属类型">
+
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-inline">
+                <label class="layui-form-label">字典值</label>
+                <div class="layui-input-inline">
+                    <input class="layui-input" id="value" autocomplete="off" placeholder="字典值">
+                </div>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-inline">
+                <label class="layui-form-label">优先级</label>
+                <div class="layui-input-inline">
+                    <input class="layui-input" id="orderNo" autocomplete="off" placeholder="优先级">
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+</body>
+</html>
